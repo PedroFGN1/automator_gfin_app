@@ -105,5 +105,8 @@ automacao_gefin_app/
 ## Tela Inicial
 ![Tela inicial](img/tela_inicial.png)
 
+## Links de Acesso
+[Drive](https://drive.google.com/drive/folders/1-lZU1EYFpA2yV12Lkg4z1i1oERVA2F2A?usp=sharing)
+
 ## 📝 Licença
 © 2026 Todos os direitos Reservados. **Desenvolvido para uso interno GFIN(Gerência de Administração Financeira da Subsecretaria do Tesouro Estadual de Goiás).**

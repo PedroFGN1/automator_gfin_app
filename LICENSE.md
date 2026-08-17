@@ -1,6 +1,6 @@
 MIT License
 
-Copyright (c) 2026 Pedro Ferreira Galvão
+Copyright (c) 2026 Pedro Ferreira Galvão Neto
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal

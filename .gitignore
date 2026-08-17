@@ -1,0 +1,70 @@
+# === IDE e Editor ===
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# === Node.js ===
+node_modules/
+.cache/
+
+# === Configuração Real (sensível) ===
+config/profiles.json
+version.json
+.env*
+
+# === Build e Distribuição ===
+dist/
+build/
+*.exe
+*.msi
+*.dmg
+*.AppImage
+
+# === Banco de Dados ===
+*.db
+*.sqlite
+*.sqlite3
+automator_gfin.db
+
+# === Logs ===
+logs/
+*.log
+
+# === Planilhas de Entrada/Saída ===
+*.xlsx
+*.xls
+evidencias/
+relatorios/
+
+# === PDFs Gerados ===
+*.pdf
+
+# === Arquivos Compactados ===
+*.zip
+*.rar
+*.7z
+*.tar.gz
+
+# === Dumps e Contexto ===
+contexto-*.txt
+resultado_extracao*.json
+prompt.md
+retorno_n8n*.md
+
+# === Direito Autoral (docs civis) ===
+direito_autoral/
+
+# === Diretórios Obsoletos ===
+obsolete_files/
+v1.4
+v1.5
+v1.6
+
+# === Agentes e Specs (desenvolvimento interno) ===
+.agents/*
+.specify/
+
+# === Sistema Operacional ===
+Thumbs.db
+.DS_Store

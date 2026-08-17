@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+    <title>ARR - Mock Paginacao</title>
+</head>
+<body>
+    <form id="frmHistoricoPagamentosContribuintes" name="frmHistoricoPagamentosContribuintes">
+        <div id="frmHistoricoPagamentosContribuintes:tabelaPagamentos" class="ui-datatable ui-widget">
+            <table role="grid">
+                <thead>
+                    <tr>
+                        <th id="frmHistoricoPagamentosContribuintes:tabelaPagamentos_paginator_top" class="ui-paginator ui-paginator-top ui-widget-header">
+                            <span class="ui-paginator-current">(1 of 2)</span>
+                            <span class="ui-paginator-first ui-state-default ui-corner-all ui-state-disabled"><span class="ui-icon ui-icon-seek-first">p</span></span>
+                            <span class="ui-paginator-prev ui-state-default ui-corner-all ui-state-disabled"><span class="ui-icon ui-icon-seek-prev">p</span></span>
+                            <span class="ui-paginator-pages">
+                                <span class="ui-paginator-page ui-state-default ui-state-active ui-corner-all">1</span>
+                                <span class="ui-paginator-page ui-state-default ui-corner-all">2</span>
+                            </span>
+                            <span id="btnNext" class="ui-paginator-next ui-state-default ui-corner-all" onclick="carregarPagina2()"><span class="ui-icon ui-icon-seek-next">p</span></span>
+                            <span class="ui-paginator-last ui-state-default ui-corner-all"><span class="ui-icon ui-icon-seek-end">p</span></span>
+                        </th>
+                    </tr>
+                </thead>
+                <tfoot>
+                    <tr>
+                        <td id="frmHistoricoPagamentosContribuintes:tabelaPagamentos_paginator_bottom" class="ui-paginator ui-paginator-bottom ui-widget-header">
+                            <span class="ui-paginator-current">(1 of 2)</span>
+                            <span class="ui-paginator-first ui-state-default ui-corner-all ui-state-disabled"><span class="ui-icon ui-icon-seek-first">p</span></span>
+                            <span class="ui-paginator-prev ui-state-default ui-corner-all ui-state-disabled"><span class="ui-icon ui-icon-seek-prev">p</span></span>
+                            <span class="ui-paginator-pages">
+                                <span class="ui-paginator-page ui-state-default ui-state-active ui-corner-all">1</span>
+                                <span class="ui-paginator-page ui-state-default ui-corner-all">2</span>
+                            </span>
+                            <span class="ui-paginator-next ui-state-default ui-corner-all" onclick="carregarPagina2()"><span class="ui-icon ui-icon-seek-next">p</span></span>
+                            <span class="ui-paginator-last ui-state-default ui-corner-all"><span class="ui-icon ui-icon-seek-end">p</span></span>
+                        </td>
+                    </tr>
+                </tfoot>
+                <tbody id="frmHistoricoPagamentosContribuintes:tabelaPagamentos_data" class="ui-datatable-data ui-widget-content">
+                    <tr data-ri="0" class="ui-widget-content ui-datatable-even" role="row">
+                        <td role="gridcell"><div class="ui-dt-c">85830000009077100082100002515400388167460000</div></td>
+                        <td role="gridcell"><div class="ui-dt-c">11111111111111111</div></td>
+                        <td role="gridcell"><div class="ui-dt-c"><button id="btnRestituir1" title="Restituição" onclick="console.log('Restituir clicado 111')">Restituir</button></div></td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </form>
+
+    <script>
+        function carregarPagina2() {
+            const tbody = document.getElementById("frmHistoricoPagamentosContribuintes:tabelaPagamentos_data");
+            tbody.innerHTML = `
+                <tr data-ri="0" class="ui-widget-content ui-datatable-even" role="row">
+                    <td role="gridcell"><div class="ui-dt-c">85800000006723700082100002516123365167460000</div></td>
+                    <td role="gridcell"><div class="ui-dt-c">22222222222222222</div></td>
+                    <td role="gridcell"><div class="ui-dt-c"><button id="btnRestituir2" title="Restituição" onclick="console.log('Restituir clicado 222')">Restituir</button></div></td>
+                </tr>
+            `;
+
+            // Atualiza classe do paginador
+            const btnNexts = document.querySelectorAll(".ui-paginator-next");
+            btnNexts.forEach(btn => btn.classList.add("ui-state-disabled"));
+
+            const currents = document.querySelectorAll(".ui-paginator-current");
+            currents.forEach(c => c.innerText = "(2 of 2)");
+        }
+    </script>
+</body>
+</html>

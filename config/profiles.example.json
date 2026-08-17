@@ -1,0 +1,570 @@
+{
+  "perfis": [
+    {
+      "id": "restituicao-fianca",
+      "nome": "Restituição de Fiança (74)",
+      "url_portal": "https://siafic.exemplo.gov.br/#/",
+      "url_formulario_direto": "https://siofi.exemplo.gov.br/siofi/servlet/control?cmd=EfetuarOPExtra",
+      "url_base_sistema": "https://siofi.exemplo.gov.br/siofi",
+      "configuracoes_fixas": {
+        "texto_selecao_inicial": "Restituição de Depósito de Fiança (74)",
+        "orgao_codigo": "0000",
+        "receita_debito": "000000000000",
+        "tipo_debito_texto": "CUTE",
+        "conta_debito": {
+          "banco": "104",
+          "agencia": "0000",
+          "conta": "00000000000"
+        },
+        "ddr_debito_texto": "0000.00000000.00000.0000 - 2022-CONTROLE DE RECEITA SEM DETALHAMENTO",
+        "tipo_credito_texto": "Movimento",
+        "enviar_para_banco": "S",
+        "rascunho": "N"
+      },
+      "mapeamento_colunas": {
+        "PROCESSO": "Proc. SEI",
+        "DATA": "Data da restituição",
+        "VALOR": "Valor Atualizado",
+        "NOME": "Beneficiário",
+        "CPF_CNPJ": "CPF | CNPJ (Beneficiário)",
+        "BANCO_CREDITO": "Banco",
+        "AGENCIA_CREDITO": "Agência",
+        "CONTA_CREDITO": "Conta",
+        "HISTORICO": "Histórico"
+      }
+    },
+    {
+      "id": "restituicao-ipva",
+      "nome": "Restituição de IPVA (68)",
+      "url_portal": "https://siafic.exemplo.gov.br/#/",
+      "url_formulario_direto": "https://siofi.exemplo.gov.br/siofi/servlet/control?cmd=EfetuarOPExtra",
+      "url_base_sistema": "https://siofi.exemplo.gov.br/siofi",
+      "configuracoes_fixas": {
+        "texto_selecao_inicial": "Restituição de IPVA (68)",
+        "orgao_codigo": "0000",
+        "receita_debito": "000000000000",
+        "tipo_debito_texto": "CUTE",
+        "conta_debito": {
+          "banco": "104",
+          "agencia": "0000",
+          "conta": "00000000000"
+        },
+        "ddr_debito_texto": "0000.00000000.00000.0000",
+        "tipo_credito_texto": "Movimento",
+        "enviar_para_banco": "S",
+        "rascunho": "N"
+      },
+      "mapeamento_colunas": {
+        "PROCESSO": "Proc. SEI",
+        "DATA": "Data da restituição",
+        "VALOR": "Valor Atualizado",
+        "NOME": "Beneficiário",
+        "CPF_CNPJ": "CPF | CNPJ (Beneficiário)",
+        "BANCO_CREDITO": "Banco",
+        "AGENCIA_CREDITO": "Agência",
+        "CONTA_CREDITO": "Conta",
+        "CODIGO_MUNICIPIO": "Código Município",
+        "HISTORICO": "Histórico"
+      }
+    },
+    {
+      "id": "restituicao-icms",
+      "nome": "Restituição de ICMS (72)",
+      "url_portal": "https://siafic.exemplo.gov.br/#/",
+      "url_formulario_direto": "https://siofi.exemplo.gov.br/siofi/servlet/control?cmd=EfetuarOPExtra",
+      "url_base_sistema": "https://siofi.exemplo.gov.br/siofi",
+      "configuracoes_fixas": {
+        "texto_selecao_inicial": "Restituição de ICMS (72)",
+        "orgao_codigo": "0000",
+        "receita_debito": "000000000000",
+        "tipo_debito_texto": "CUTE",
+        "conta_debito": {
+          "banco": "104",
+          "agencia": "0000",
+          "conta": "00000000000"
+        },
+        "ddr_debito_texto": "0000.00000000.00000.0000",
+        "tipo_credito_texto": "Movimento",
+        "enviar_para_banco": "S",
+        "rascunho": "N"
+      },
+      "mapeamento_colunas": {
+        "PROCESSO": "Proc. SEI",
+        "DATA": "Data da restituição",
+        "VALOR": "Valor Atualizado",
+        "NOME": "Beneficiário",
+        "CPF_CNPJ": "CPF | CNPJ (Beneficiário)",
+        "BANCO_CREDITO": "Banco",
+        "AGENCIA_CREDITO": "Agência",
+        "CONTA_CREDITO": "Conta",
+        "HISTORICO": "Histórico"
+      }
+    },
+    {
+      "id": "restituicao-dre",
+      "nome": "Restituição de D. da Receita Estadual (84)",
+      "url_portal": "https://siafic.exemplo.gov.br/#/",
+      "url_formulario_direto": "https://siofi.exemplo.gov.br/siofi/servlet/control?cmd=EfetuarOPExtra",
+      "url_base_sistema": "https://siofi.exemplo.gov.br/siofi",
+      "configuracoes_fixas": {
+        "texto_selecao_inicial": "Restituição de Desvinculação da Receita Estadual - DRE (84)",
+        "orgao_codigo": "0000",
+        "receita_debito": "000000000000",
+        "tipo_debito_texto": "CUTE",
+        "conta_debito": {
+          "banco": "104",
+          "agencia": "0000",
+          "conta": "00000000000"
+        },
+        "ddr_debito_texto": "0000.00000000.00000.0000",
+        "tipo_credito_texto": "Movimento",
+        "enviar_para_banco": "S",
+        "rascunho": "N"
+      },
+      "mapeamento_colunas": {
+        "PROCESSO": "Proc. SEI",
+        "DATA": "Data da restituição",
+        "VALOR": "Valor Atualizado",
+        "NOME": "Beneficiário",
+        "CPF_CNPJ": "CPF | CNPJ (Beneficiário)",
+        "BANCO_CREDITO": "Banco",
+        "AGENCIA_CREDITO": "Agência",
+        "CONTA_CREDITO": "Conta",
+        "HISTORICO": "Histórico"
+      }
+    },
+    {
+      "id": "restituicao-itcd",
+      "nome": "Restituição de ITCD (73)",
+      "url_portal": "https://siafic.exemplo.gov.br/#/",
+      "url_formulario_direto": "https://siofi.exemplo.gov.br/siofi/servlet/control?cmd=EfetuarOPExtra",
+      "url_base_sistema": "https://siofi.exemplo.gov.br/siofi",
+      "configuracoes_fixas": {
+        "texto_selecao_inicial": "Restituição de ITCD (73)",
+        "orgao_codigo": "0000",
+        "receita_debito": "000000000000",
+        "tipo_debito_texto": "CUTE",
+        "conta_debito": {
+          "banco": "104",
+          "agencia": "0000",
+          "conta": "00000000000"
+        },
+        "ddr_debito_texto": "0000.00000000.00000.0000",
+        "tipo_credito_texto": "Movimento",
+        "enviar_para_banco": "S",
+        "rascunho": "N"
+      },
+      "mapeamento_colunas": {
+        "PROCESSO": "Proc. SEI",
+        "DATA": "Data da restituição",
+        "VALOR": "Valor Atualizado",
+        "NOME": "Beneficiário",
+        "CPF_CNPJ": "CPF | CNPJ (Beneficiário)",
+        "BANCO_CREDITO": "Banco",
+        "AGENCIA_CREDITO": "Agência",
+        "CONTA_CREDITO": "Conta",
+        "HISTORICO": "Histórico"
+      }
+    },
+    {
+      "id": "marcacao-terminal",
+      "nome": "Marcação Terminal (Passo-a-Passo)",
+      "url_portal": "https://portal.sefaz.exemplo.gov.br/portalsefaz-apps/",
+      "url_formulario_direto": "tew.sefaz.exemplo.gov.br/tew/z_container.jsp",
+      "url_base_sistema": "tew.sefaz.exemplo.gov.br/",
+      "configuracoes_fixas": {
+        "tentativas_maximas": "3",
+        "tipo_usuario_terminal": "efetivo"
+      },
+      "mapeamento_colunas": {
+        "TIPO": "Tipo",
+        "MULTIPLO": "Múltiplos DARE's?",
+        "PROCESSO": "Proc. SEI",
+        "DARE": "DARE/GNRE Nº",
+        "DATA_PAGAMENTO": "Data pagamento DARE",
+        "VALOR_RESTITUIDO": "Valor autorizado",
+        "END": "END -TERMINAL",
+        "SEQ": "SEQ - TERMINAL"
+      }
+    },
+    {
+      "id": "marcacao-arr",
+      "nome": "Marcação ARR",
+      "url_portal": "https://portal.sefaz.exemplo.gov.br/portalsefaz-apps/",
+      "url_formulario_direto": "https://arr.sefaz.exemplo.gov.br/arr/view/historicoPagamentosContribuinte.jsf?param=restituirHabilitado",
+      "url_base_sistema": "https://arr.sefaz.exemplo.gov.br/arr/",
+      "url_base_comprovante": "https://arr.economia.exemplo.gov.br/arr-www/view/exibeDARE.jsf?codigo=",
+      "configuracoes_fixas": {
+        "config_ids": {
+          "prefixo_id": "frmHistoricoPagamentosContribuintes:",
+          "tipo_documento_dare": "tabHistoricoContribuinte:tipoDocumento:0",
+          "tipo_documento_gnre": "tabHistoricoContribuinte:tipoDocumento:1",
+          "tipo_contribuinte": "tabHistoricoContribuinte:cmbTipoContribuinte",
+          "campo_contribuinte": "tabHistoricoContribuinte:txtContribuinte",
+          "tipo_periodo": "tabHistoricoContribuinte:cmbTipoData",
+          "data_inicio": "tabHistoricoContribuinte:dataInicial_input",
+          "data_fim": "tabHistoricoContribuinte:dataFinal_input",
+          "botao_pesquisar": "tabHistoricoContribuinte:j_idt199",
+          "botao_nova_restituicao": "j_idt90",
+          "campo_processo": "txtNumeroProcessoRestituicao",
+          "tipo_restituicao": "tipoRestituicao:0",
+          "forma_restituicao": "formaRestituicao:0",
+          "campo_valor_restituir": "valorRestituicaoPagamento",
+          "campo_informacoes": "informacoesComplementares",
+          "botao_incluir": "j_idt141",
+          "campo_endereco": "textCodBancoSare",
+          "campo_data_pagamento": "dataPagtoEndSare_input",
+          "campo_tpa": "txtTpaEndSare",
+          "campo_indicador": "txtIndicadorEndSare",
+          "botao_incluir_duplicado": "btnCorrecaoDareSare",
+          "seletor_paginador": "tabelaPagamentos_paginator_bottom"
+        },
+        "habilitar_paginacao": true,
+        "limite_maximo_paginas": 10,
+        "tipo_restituicao": "Restituição",
+        "forma_restituicao": "Espécie",
+        "campo_informacoes": "CONFORME DESPACHO AUTORIZATIVO",
+        "texto_final": "MARCADO"
+      },
+      "mapeamento_colunas": {
+        "TIPO": "Tipo",
+        "MULTIPLO": "Múltiplos DARE's?",
+        "PROCESSO": "Proc. SEI",
+        "DARE": "Documento Referência",
+        "TIPO_CONTRIBUINTE": "Tipo de Contribuinte",
+        "CONTRIBUINTE": "Contribuinte - Marcação",
+        "DATA": "Data pagamento DARE",
+        "VALOR_RESTITUIDO": "Valor autorizado",
+        "END": "END -TERMINAL",
+        "SEQ": "SEQ - TERMINAL"
+      }
+    },
+    {
+      "id": "cadastro-beneficiario",
+      "nome": "Cadastro de Beneficiário",
+      "url_portal": "https://siafic.exemplo.gov.br/#/",
+      "url_formulario_direto": "https://siofi.exemplo.gov.br/siofi/servlet/control?cmd=gov.goias.controle.corporativo.SelecionarPessoa&paramPodeManter=true&paramPodeAlterar=false",
+      "url_base_sistema": "https://siofi.exemplo.gov.br/siofi",
+      "configuracoes_fixas": {
+        "pessoa_fisica": {
+          "value": "1",
+          "msg_nao_encontrado": "Nenhuma pessoa física encontrada para estes parâmetros.",
+          "campo_nome_cadastro": "nomePessoaFisica",
+          "campo_identificador": "cpfCNPJ"
+        },
+        "pessoa_juridica": {
+          "value": "2",
+          "msg_nao_encontrado": "Nenhuma pessoa jurídica encontrada para estes parâmetros.",
+          "campo_nome_cadastro": "razaoSocial",
+          "campo_identificador": "cpfCNPJ"
+        },
+        "campo_tipo_pessoa": "tPes",
+        "campo_nome_pessoa": "nomePessoa",
+        "campo_cpf_cnpj": "cpfCNPJ",
+        "botao_incluir": "Incluir",
+        "botao_alterar": "Alterar"
+      },
+      "mapeamento_colunas": {
+        "PROCESSO": "Proc. SEI",
+        "TIPO_BENEFICIARIO": "Tipo de Beneficiário",
+        "NOME": "Beneficiário",
+        "CPF_CNPJ": "CPF | CNPJ (Beneficiário)"
+      }
+    },
+    {
+      "id": "consultar-ope-quitada",
+      "nome": "Consulta de OPE Quitada",
+      "url_portal": "https://siafic.exemplo.gov.br/#/",
+      "url_formulario_direto": "https://siofi.exemplo.gov.br/siofi/servlet/control?cmd=ConsultarOPExtra",
+      "url_base_sistema": "https://siofi.exemplo.gov.br/siofi",
+      "configuracoes_fixas": {
+        "names": {
+          "campo_orgao": "txtOrgao",
+          "campo_sequencial_op": "sequencialOP",
+          "botao_dueof": "Dueof"
+        },
+        "orgao_codigo": "0000"
+      },
+      "mapeamento_colunas": {
+        "OP": "OP"
+      }
+    },
+    {
+      "id": "consultar-op-quitada",
+      "nome": "Consulta de OP Quitada",
+      "url_portal": "https://siafic.exemplo.gov.br/#/",
+      "url_formulario_direto": "https://siofi.exemplo.gov.br/siofi/servlet/control?cmd=ConsultarOP",
+      "url_base_sistema": "https://siofi.exemplo.gov.br/siofi",
+      "configuracoes_fixas": {
+        "campos_op": {
+          "campo_exercicio": "txtExercicio",
+          "campo_orgao": "txtOrgao",
+          "campo_sequencial_dotacao": "txtSeqDotacao",
+          "campo_empenho": "txtEmpenho",
+          "campo_sequencial_op": "txtSeqOP"
+        },
+        "botao_dueof": "Dueof",
+        "botao_consultar": "Consultar"
+      },
+      "mapeamento_colunas": {
+        "OP": "OP"
+      }
+    },
+    {
+      "id": "emissao-guia-deposito",
+      "nome": "Emissão de Guia de Depósito Judicial",
+      "url_portal": "https://novodepositojudicial.exemplo.com.br/judicial",
+      "url_formulario_direto": "https://novodepositojudicial.exemplo.com.br/judicial",
+      "url_base_sistema": "https://novodepositojudicial.exemplo.com.br",
+      "configuracoes_fixas": {
+        "TELEFONE": "(00) 0000-0000",
+        "CPF_CNPJ_DEPOSITANTE": "00.000.000/0001-00",
+        "texto_cartao_justica": "Justiça Estadual",
+        "estado_value": "1: Object",
+        "timeout_padrao_ms": 15000,
+        "timeout_captcha_ms": 0,
+        "timeout_pdf_ms": 30000,
+        "pasta_pdf": "",
+        "seletores": {
+          "processo": "#in-processo",
+          "proximaTela": "div.cardrow > div:nth-of-type(1) h4",
+          "autor": "app-validar-documento[nome=\"Autor\"] input[formcontrolname=\"inscricao\"]",
+          "reu": "app-validar-documento[nome=\"Réu\"] input[formcontrolname=\"inscricao\"]",
+          "depositanteSelect": "select#selectDepositante",
+          "depositanteDocumento": "app-validar-documento[label=\"Identifique o Depositante *\"] input[formcontrolname=\"inscricao\"]",
+          "telefone": "#in-telefone",
+          "estado": "select[formcontrolname=\"estado\"]",
+          "municipio": "select[id=\"in-municipios\"]",
+          "dataVencimento": "input[id=\"in-vencimento\"]",
+          "valor": "input[formcontrolname=\"valor\"]",
+          "observacao": "textarea[id='in-observacao']"
+        }
+      },
+      "mapeamento_colunas": {
+        "PROCESSO": "Proc. Judicial",
+        "CPF_CNPJ_AUTOR": "CPF/CNPJ Autor",
+        "CPF_CNPJ_REU": "CPF/CNPJ Réu",
+        "MUNICIPIO": "Município",
+        "VALOR": "Valor",
+        "DATA_VENCIMENTO": "Data de Vencimento",
+        "OBSERVACAO": "Observação"
+      }
+    },
+    {
+      "id": "consultar-guia-autenticada",
+      "nome": "Consulta de Guia Autenticada",
+      "url_portal": "https://novodepositojudicial.exemplo.com.br/comprovante",
+      "url_formulario_direto": "https://novodepositojudicial.exemplo.com.br/comprovante/deposito",
+      "url_base_sistema": "https://novodepositojudicial.exemplo.com.br",
+      "configuracoes_fixas": {
+        "timeout_padrao_ms": 15000,
+        "timeout_captcha_ms": 60000,
+        "timeout_blob_ms": 20000,
+        "pasta_pdf": "",
+        "seletores": {
+          "inputId": "#in-iddeposito",
+          "cardComprovante": "h4::-p-text(Comprovante de Depósito)",
+          "btnConsultar": "button::-p-text(Consultar ID)",
+          "btnVisualizar": "button::-p-text(Visualizar Comprovante)"
+        }
+      },
+      "mapeamento_colunas": {
+        "OBSERVACAO": "Observação",
+        "ID_DEPOSITO": "ID_DEPOSITO"
+      }
+    },
+    {
+      "id": "cadastro-documento",
+      "nome": "Cadastro de Documento das Guias Judiciais",
+      "url_portal": "https://siafic.exemplo.gov.br/#/",
+      "url_formulario_direto": "https://siofi.exemplo.gov.br/siofi/servlet/control?cmd=gov.goias.controle.planejamento.codigobarra.CodigoBarra",
+      "url_base_sistema": "https://siofi.exemplo.gov.br/siofi",
+      "configuracoes_fixas": {
+        "orgao_codigo": "0000",
+        "beneficiario": "00.000.000/0001-00",
+        "names": {
+          "campo_codigo_barras": "txtCodigo",
+          "campo_orgao": "txtOrgao",
+          "campo_beneficiario_cnpj": "tr:nth-of-type(2) input",
+          "campo_descricao_boleto": "txtDescricaoBoleto"
+        }
+      },
+      "mapeamento_colunas": {
+        "OBSERVACAO": "Observação",
+        "CODIGO_BARRA": "CODIGO_BARRA"
+      }
+    },
+    {
+      "id": "analise-honorarios-periciais",
+      "nome": "Análise de Honorários Periciais",
+      "url_portal": "",
+      "url_formulario_direto": "",
+      "url_base_sistema": "",
+      "configuracoes_fixas": {
+        "perfil_prompt_path": "perfil_honorarios.md",
+        "dias_acrescimo_vencimento": 20,
+        "n8n_webhook": {
+          "ambiente": "producao",
+          "urls": {
+            "teste": "",
+            "producao": "https://seu-orquestrador-n8n.exemplo.com/webhook/00000000-0000-0000-0000-000000000000"
+          }
+        }
+      },
+      "mapeamento_colunas": {
+        "PROCESSO_SEI": "Processo SEI",
+        "PROCESSO": "Proc. Judicial",
+        "CPF_CNPJ_AUTOR": "CPF/CNPJ Autor",
+        "CPF_CNPJ_REU": "CPF/CNPJ Réu",
+        "COMARCA": "Município",
+        "VALOR": "Valor",
+        "OBSERVACAO": "Observação",
+        "DATA_VENCIMENTO": "Data de Vencimento",
+        "STATUS": "status_analise",
+        "JUSTIFICATIVA": "justificativa_status",
+        "VARA_JUDICIAL": "Vara Judicial",
+        "DESPACHO": "Despacho"
+      }
+    },
+    {
+      "id": "consultar-cnd",
+      "nome": "Consulta de Certidão Negativa de Débito",
+      "url_portal": "https://www.sefaz.exemplo.gov.br/Certidao/Emissao/",
+      "url_formulario_direto": "https://www.sefaz.exemplo.gov.br/Certidao/Emissao/",
+      "url_base_sistema": "https://www.sefaz.exemplo.gov.br/Certidao/Emissao/",
+      "configuracoes_fixas": {
+        "tipo_certidao": "Dívida Ativa",
+        "pessoa_fisica": {
+          "select_tipo_certidao": "Certidao.Tipo",
+          "radio_tipo_documento": "Certidao.TipoDocumentoCPF",
+          "campo_documento": "Certidao.NumeroDocumentoCPF",
+          "radio_espolio": "Certidao.EspolioN"
+        },
+        "pessoa_juridica": {
+          "select_tipo_certidao": "Certidao.Tipo",
+          "radio_tipo_documento": "Certidao.TipoDocumentoCNPJ",
+          "campo_documento": "Certidao.NumeroDocumentoCNPJ",
+          "radio_espolio": "Certidao.EspolioN"
+        },
+        "botao_emitir": "Emitir",
+        "botao_confirmar_emissao": "Certidao.ConfirmaNomeContribuinteSim"
+      },
+      "mapeamento_colunas": {
+        "flags": "i",
+        "campos": {
+          "nome": "NOME:(?:CNPJ|CPF-MF)[\\s\\\"\\n,]*([A-ZÀ-Ÿ.\\s&]+?)(?=\\s\\d)",
+          "cpf_cnpj": "(\\d{3}\\.\\d{3}\\.\\d{3}\\-\\d{2}|\\d{2}\\.\\d{3}\\.\\d{3}\\/\\d{4}\\-\\d{2})",
+          "situacao": "DESPACHO.*?:[\\s\\n\\\"\\,]*(NAO CONSTA DEBITO|POSSUI DEBITO[\\s\\S]*?\\.)"
+        },
+        "chaveStatus": "situacao",
+        "regras": {
+          "negativa": [
+            "nao consta debito"
+          ]
+        }
+      }
+    },
+    {
+      "id": "analise-restituicoes",
+      "nome": "Análise Inteligente de Restituições",
+      "url_portal": "",
+      "url_formulario_direto": "",
+      "url_base_sistema": "",
+      "configuracoes_fixas": {
+        "template_xlsm": "modelo-GFIN AUTOMATOR-v.1.7.xlsm",
+        "guia_fianca": "Fianca",
+        "guia_icms": "ICMS",
+        "guia_ipva": "IPVA",
+        "guia_itcd": "ITCD",
+        "guia_dare": "DARE",
+        "limiar_confianca": 0.8,
+        "modo_exportacao_pdf": "unico",
+        "n8n_webhook": {
+          "ambiente": "producao",
+          "urls": {
+            "teste": "",
+            "producao": ""
+          }
+        }
+      },
+      "mapeamento_colunas": {
+        "guia_fianca": {
+          "PROCESSO_SEI": "Proc. SEI",
+          "numero_processo_judicial": "Proc. Judicial",
+          "contribuinte.nome_completo": "Acusado",
+          "contribuinte.cpf_cnpj": "Contribuinte - Marcação",
+          "beneficiario.nome_completo": "Beneficiário",
+          "beneficiario.cpf_cnpj": "CPF | CNPJ (Beneficiário)",
+          "conta_bancaria_restituicao.banco_codigo": "Banco",
+          "conta_bancaria_restituicao.agencia": "Agência",
+          "conta_bancaria_restituicao.conta": "Conta",
+          "dares_recolhidos.numero_dare": "Documento Referência",
+          "dares_recolhidos.data_pagamento": "Data pagamento DARE",
+          "dares_recolhidos.end": "END -TERMINAL",
+          "dares_recolhidos.seq": "SEQ - TERMINAL",
+          "dares_recolhidos.valor_restituir": "Valor autorizado",
+          "analise": "Análise da IA"
+        },
+        "guia_icms": {
+          "PROCESSO_SEI": "Proc. SEI",
+          "contribuinte.nome_completo": "Contribuinte",
+          "contribuinte.cpf_cnpj": "Contribuinte - Marcação",
+          "beneficiario.nome_completo": "Beneficiário",
+          "beneficiario.cpf_cnpj": "CPF | CNPJ (Beneficiário)",
+          "conta_bancaria_restituicao.banco_codigo": "Banco",
+          "conta_bancaria_restituicao.agencia": "Agência",
+          "conta_bancaria_restituicao.conta": "Conta",
+          "dares_recolhidos.numero_dare": "Documento Referência",
+          "dares_recolhidos.data_pagamento": "Data pagamento DARE",
+          "dares_recolhidos.end": "END -TERMINAL",
+          "dares_recolhidos.seq": "SEQ - TERMINAL",
+          "dares_recolhidos.valor_restituir": "Valor autorizado",
+          "analise": "Análise da IA"
+        },
+        "guia_ipva": {
+          "PROCESSO_SEI": "Proc. SEI",
+          "contribuinte.nome_completo": "Contribuinte",
+          "contribuinte.cpf_cnpj": "Contribuinte - Marcação",
+          "beneficiario.nome_completo": "Beneficiário",
+          "beneficiario.cpf_cnpj": "CPF | CNPJ (Beneficiário)",
+          "conta_bancaria_restituicao.banco_codigo": "Banco",
+          "conta_bancaria_restituicao.agencia": "Agência",
+          "conta_bancaria_restituicao.conta": "Conta",
+          "dares_recolhidos.numero_dare": "Documento Referência",
+          "dares_recolhidos.data_pagamento": "Data pagamento DARE",
+          "dares_recolhidos.codigo_municipio": "Código Município",
+          "dares_recolhidos.end": "END -TERMINAL",
+          "dares_recolhidos.seq": "SEQ - TERMINAL",
+          "dares_recolhidos.valor_restituir": "Valor autorizado",
+          "analise": "Análise da IA"
+        },
+        "guia_itcd": {
+          "PROCESSO_SEI": "Proc. SEI",
+          "contribuinte.nome_completo": "Contribuinte",
+          "contribuinte.cpf_cnpj": "Contribuinte - Marcação",
+          "beneficiario.nome_completo": "Beneficiário",
+          "beneficiario.cpf_cnpj": "CPF | CNPJ (Beneficiário)",
+          "conta_bancaria_restituicao.banco_codigo": "Banco",
+          "conta_bancaria_restituicao.agencia": "Agência",
+          "conta_bancaria_restituicao.conta": "Conta",
+          "dares_recolhidos.numero_dare": "Documento Referência",
+          "dares_recolhidos.data_pagamento": "Data pagamento DARE",
+          "dares_recolhidos.end": "END -TERMINAL",
+          "dares_recolhidos.seq": "SEQ - TERMINAL",
+          "dares_recolhidos.valor_restituir": "Valor autorizado",
+          "analise": "Análise da IA"
+        },
+        "guia_dare": {
+          "PROCESSO_SEI": "Proc. SEI",
+          "contribuinte.cpf_cnpj": "Contribuinte - Marcação",
+          "dares_recolhidos.numero_dare": "Documento Referência",
+          "dares_recolhidos.data_pagamento": "Data pagamento DARE",
+          "dares_recolhidos.end": "END -TERMINAL",
+          "dares_recolhidos.seq": "SEQ - TERMINAL",
+          "dares_recolhidos.valor_restituir": "Valor autorizado"
+        }
+      }
+    }
+  ],
+  "diretorio_saida_padrao": "C:/AutomacaoFinanceira"
+}

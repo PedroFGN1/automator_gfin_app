@@ -1,0 +1,66 @@
+{
+  "name": "automacao_gefin_app",
+  "version": "1.7.6",
+  "main": "src/main/main.js",
+  "scripts": {
+    "start": "electron .",
+    "dev": "electron .",
+    "watch:css": "npx @tailwindcss/cli -i src/frontend/styles/input.css -o src/frontend/styles/output.css --watch",
+    "test": "jest --runInBand",
+    "build:css": "tailwindcss -i src/frontend/styles/input.css -o src/frontend/styles/output.css",
+    "dist": "electron-builder",
+    "build": "npm run build:css && npm run dist",
+    "compactar": "node scripts/compactar-projeto.js"
+  },
+  "jest": {
+    "cacheDirectory": ".cache/jest",
+    "modulePathIgnorePatterns": [
+      "<rootDir>/obsolete_files/",
+      "<rootDir>/dist/"
+    ]
+  },
+  "build": {
+    "appId": "com.gefin.automacao",
+    "productName": "Automator GEFIN",
+    "asar": false,
+    "directories": {
+      "output": "dist"
+    },
+    "files": [
+      "src/**/*",
+      "config/**/*",
+      "package.json",
+      ".cache/**/*",
+      "!.cache/jest/**/*"
+    ],
+    "win": {
+      "target": [
+        "portable",
+        "dir"
+      ],
+      "icon": "build/icon.ico"
+    }
+  },
+  "keywords": [],
+  "author": "Pedro Ferreira Galvão Neto",
+  "license": "ISC",
+  "description": "Projeto de automação para os processos da GEFIN, aplicação desktop desenvolvida com Electron.",
+  "devDependencies": {
+    "daisyui": "^5.5.14",
+    "electron": "^40.0.0",
+    "electron-builder": "^26.4.0",
+    "jest": "^30.2.0"
+  },
+  "dependencies": {
+    "@tailwindcss/cli": "^4.1.18",
+    "axios": "^1.16.1",
+    "exceljs": "^3.4.0",
+    "fs": "^0.0.1-security",
+    "path": "^0.12.7",
+    "pdf-parse": "^1.1.1",
+    "puppeteer": "^24.35.0",
+    "puppeteer-extra": "^3.3.6",
+    "puppeteer-extra-plugin-stealth": "^2.11.2",
+    "tailwindcss": "^4.1.18"
+  }
+}

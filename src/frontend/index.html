@@ -1,0 +1,211 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="UTF-8" />
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:;">
+    <meta
+      http-equiv="X-Content-Security-Policy"
+      content="default-src 'self'; script-src 'self'"
+    />
+    <title>Automator GFIN</title>
+    <link href="./styles/output.css" rel="stylesheet">
+
+  </head>
+  <body class="h-screen flex flex-col bg-base-300 text-base-content font-sans overflow-hidden">
+
+    <div class="navbar bg-neutral text-neutral-content shadow-lg draggable-region" style="-webkit-app-region: drag">
+        <div class="flex-1 px-2 mx-2">
+            <span class="text-lg font-bold flex items-center gap-2">
+                🤖 Automator GFIN <span class="badge badge-primary badge-sm">v1.7.6</span>
+            </span>
+        </div>
+        <div class="flex-none" style="-webkit-app-region: no-drag">
+            <button id="btnConfig" class="btn btn-square btn-ghost btn-md text-2xl" title="Configurações">
+                ⚙️
+            </button>
+        </div>
+    </div>
+
+    <div class="flex flex-1 p-4 gap-4 overflow-hidden">
+        
+        <div class="w-1/3 flex flex-col gap-4">
+            
+            <div class="card bg-base-100 shadow-xl flex-1">
+                <div class="card-body">
+                    <h2 class="card-title text-sm uppercase text-secondary mb-4">Configuração da Execução</h2>
+                    
+                    <div class="form-control w-full">
+                        <label class="label">
+                            <span class="label-text">Selecione o Processo</span>
+                        </label>
+                        <select id="selectPerfil" class="select select-bordered w-full">
+                            <option value="analise-restituicoes">Análise de Restituições</option>
+                            <option value="restituicao-fianca">Restituição de Fiança (74)</option>
+                            <option value="restituicao-ipva">Restituição de IPVA (68)</option>
+                            <option value="restituicao-icms">Restituição de ICMS (72)</option>
+                            <option value="restituicao-itcd">Restituição de ITCD (73)</option>
+                            <option value="marcacao-terminal">Marcação DARE - Terminal Economia</option>
+                            <option value="marcacao-arr">Marcação DARE - ARR</option>
+                            <option value="cadastro-beneficiario">Cadastro de Beneficiário</option>
+                            <option value="consultar-ope-quitada">Consulta de OPE Quitada</option>
+                            <option value="consultar-op-quitada">Consulta de OP Quitada</option>
+                            <option value="consultar-cnd">Consulta de Certidão Negativa de Débito</option>
+                            <option value="analise-honorarios-periciais">Análise de Honorários Periciais</option>
+                            <option value="emissao-guia-deposito">Emissão de Guia de Depósito Judicial</option>
+                            <option value="cadastro-documento">Cadastro de Documento das Guias Judiciais</option>
+                            <option value="consultar-guia-autenticada">Consulta de Guia Judicial Autenticada</option>
+                            
+                            
+                            <!--<option value="restituicao-dre" disabled>Restituição de Desv. da Rec. Estadual (84)</option>-->
+                        </select>
+                    </div>
+
+                    <div class="form-control w-full mt-4">
+                        <label class="label">
+                            <span id="labelTipoArquivo" class="label-text">Planilha de Dados (.xlsx)</span>
+                        </label>
+                        <div class="flex gap-2">
+                            <button id="btnArquivo" class="btn btn-outline btn-accent flex-1">
+                                📂 Escolher Arquivo
+                            </button>
+                        </div>
+                        <label class="label">
+                            <span id="labelArquivo" class="label-text-alt text-warning truncate">Nenhum arquivo selecionado</span>
+                        </label>
+                    </div>
+
+                    <div class="divider"></div>
+
+                    <div class="flex flex-col gap-3 mt-auto">
+                        <button id="btnIniciar" class="btn btn-primary w-full shadow-lg hover:scale-105 transition-transform" disabled>
+                            ▶ INICIAR AUTOMAÇÃO
+                        </button>
+                        <button id="btnContinuar" class="btn btn-warning hidden animate-pulse">
+                            ▶ CONTINUAR
+                        </button>
+                        <button id="btnParar" class="btn btn-error btn-outline w-full" disabled>
+                            ⏹ PARAR (Forçar Saída)
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="stats shadow bg-base-100">
+                <div class="stat">
+                    <div class="stat-title">Status Atual</div>
+                    <div id="statusTexto" class="stat-value text-2xl text-success">Aguardando</div>
+                    <div class="stat-desc">Pronto para iniciar</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="w-2/3 flex flex-col">
+            <div class="mockup-code bg-[#1e1e1e] text-gray-300 flex-1 overflow-hidden flex flex-col shadow-2xl border border-gray-700">
+                <div class="flex justify-between items-center px-4 py-2 bg-[#2d2d2d] border-b border-gray-700">
+                    <span class="text-xs text-gray-500">Terminal de Execução</span>
+                    <button id="btnLimparLog" class="btn btn-xs btn-ghost text-gray-500 hover:text-white">Limpar</button>
+                </div>
+                <div id="logArea" class="flex-1 overflow-y-auto p-4 font-mono text-sm space-y-1">
+                    <div class="text-info">ℹ️ Sistema inicializado. Selecione uma planilha ou PDFs para começar.</div>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <dialog id="modalConfig" class="modal">
+        <div class="modal-box w-11/12 max-w-5xl h-5/6 flex flex-col bg-base-100">
+            <div class="flex justify-between items-center mb-4">
+                <h3 class="font-bold text-2xl text-primary">⚙️ Configurações do Robô</h3>
+                <button id="btnFecharConfig" class="btn btn-sm btn-circle btn-ghost">✕</button>
+            </div>
+            
+            <div class="divider m-0"></div>
+
+            <div id="containerFormConfig" class="flex-1 overflow-y-auto p-4 space-y-6">
+                </div>
+            
+            <div class="modal-action border-t border-base-300 pt-4">
+                <span class="text-xs text-warning mr-auto flex items-center gap-2">
+                    ⚠️ Alterações afetam a execução imediatamente.
+                </span>
+                <button id="btnSalvarConfig" class="btn btn-success gap-2">
+                    💾 Salvar Alterações
+                </button>
+            </div>
+        </div>
+    </dialog>
+    
+    <dialog id="modalInstrucoesErro" class="modal">
+        <div class="modal-box w-11/12 max-w-4xl bg-base-100">
+            <div class="flex justify-between items-center mb-4">
+                <h3 class="font-bold text-2xl text-warning">📖 Instruções para Correção de Erro</h3>
+                <button id="btnFecharInstrucoes" class="btn btn-sm btn-circle btn-ghost">✕</button>
+            </div>
+            
+            <div class="divider m-0"></div>
+
+            <div class="space-y-4 py-4">
+                <div class="alert alert-info">
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" class="stroke-current shrink-0 w-6 h-6"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                    <div>
+                        <h4 class="font-bold">Erro detectado no processamento</h4>
+                        <p>Verifique os pontos abaixo antes de clicar em "Continuar":</p>
+                    </div>
+                </div>
+                
+                <div class="grid gap-4">
+                    <div class="card bg-base-200 p-4">
+                        <h5 class="font-bold text-primary mb-2">1. Verifique o Terminal</h5>
+                        <ul class="list-disc list-inside space-y-1 text-sm">
+                            <li>
+                                O terminal deve estar na tela correta e pronto para receber comandos.
+                                <a href="#" id="toggleImage" class="link link-info text-warning text-xl ml-1">(Visualizar tela)</a>
+                            </li>
+                            <li>Certifique-se de que não há mensagens de erro na tela</li>
+                            <li>Verifique se o foco está no campo correto</li>
+                        </ul>
+                        <div id="imageContainer" class="hidden mt-2 border-2 border-dashed border-gray-500 p-2 rounded-lg">
+                            <img id="terminalInstructionImage" alt="Tela de exemplo do terminal para usuário efetivo" class="rounded w-full">
+                        </div>
+                    </div>
+                    
+                    <div class="card bg-base-200 p-4">
+                        <h5 class="font-bold text-primary mb-2">2. Dados da Planilha</h5>
+                        <ul class="list-disc list-inside space-y-1 text-sm">
+                            <li>Confirme se os dados da linha atual estão corretos</li>
+                            <li>Verifique se os códigos END e SEQ estão no formato esperado</li>
+                            <li>Certifique-se de que o valor e data estão corretos</li>
+                        </ul>
+                    </div>
+                    
+                    <div class="card bg-base-200 p-4">
+                        <h5 class="font-bold text-primary mb-2">3. Ações Recomendadas</h5>
+                        <ul class="list-disc list-inside space-y-1 text-sm">
+                            <li>Se necessário, ajuste manualmente a tela do terminal</li>
+                            <li>Corrigir dados incorretos na planilha se identificados</li>
+                            <li>Clicar em "Continuar" apenas quando tudo estiver pronto</li>
+                        </ul>
+                    </div>
+                </div>
+                
+                <div class="alert alert-warning">
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" class="stroke-current shrink-0 w-6 h-6"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L4.082 16.5c-.77.833.192 2.5 1.732 2.5z"></path></svg>
+                    <div>
+                        <p><strong>Limite de tentativas:</strong> O sistema permite até 3 tentativas por linha. Após isso, pula automaticamente para a próxima.</p>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="modal-action border-t border-base-300 pt-4">
+                <button id="btnConfirmarInstrucoes" class="btn btn-success gap-2">
+                    Continuar Processamento
+                </button>
+            </div>
+        </div>
+    </dialog>
+    
+    <script src="./renderer.js"></script>
+</body>
+
+</html>

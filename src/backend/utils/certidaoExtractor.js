@@ -2,6 +2,27 @@ const fs = require('fs');
 const pdf = require('pdf-parse');
 
 /**
+ * Normaliza textos extraídos de PDFs com falhas de mapeamento de fontes (ex: TrueType com CMap 16-bit).
+ * Trata o byte swap de UTF-16 BE e glifos corrompidos recorrentes.
+ */
+function normalizarTextoPdf(texto) {
+    if (!texto) return '';
+    // Substitui a sequência de escape corrompida do dígito '2' (\u1100 ou (\u1100))
+    let s = texto.replace(/\(\u1100\)/g, '2').replace(/\u1100/g, '2');
+    let resultado = '';
+    for (let i = 0; i < s.length; i++) {
+        const code = s.charCodeAt(i);
+        // Corrige caracteres onde o byte alto contém o caractere ASCII imprimível (0x20 a 0x7E)
+        if ((code & 0xFF) === 0 && (code >> 8) >= 0x20 && (code >> 8) <= 0x7E) {
+            resultado += String.fromCharCode(code >> 8);
+        } else {
+            resultado += s[i];
+        }
+    }
+    return resultado;
+}
+
+/**
  * Processa um ou mais PDFs de certidões e extrai os dados baseados em Regex.
  * 
  * @param {Array<string|Buffer>} pdfInputs - Caminhos dos arquivos PDF ou Buffers.
@@ -39,7 +60,7 @@ async function extrairCertidoes(pdfInputs, config) {
                 if (lastY !== item.transform[5] && lastY !== null) {
                     text += '\n';
                 }
-                text += item.str;
+                text += normalizarTextoPdf(item.str);
                 lastY = item.transform[5];
             }
             return text + '\n---FIM_DA_PAGINA---\n';

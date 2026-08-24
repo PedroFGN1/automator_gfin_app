@@ -452,9 +452,9 @@
       "mapeamento_colunas": {
         "flags": "i",
         "campos": {
-          "nome": "NOME:(?:CNPJ|CPF-MF)[\\s\\\"\\n,]*([A-ZÀ-Ÿ.\\s&]+?)(?=\\s\\d)",
+          "nome": "NOME:?(?:\\s*(?:CNPJ|CPF-MF))?[\\s\\\"\\n,]*([A-ZÀ-Ÿ.\\s&]+?)(?=\\s*\\d{2,3}[.\\/])",
           "cpf_cnpj": "(\\d{3}\\.\\d{3}\\.\\d{3}\\-\\d{2}|\\d{2}\\.\\d{3}\\.\\d{3}\\/\\d{4}\\-\\d{2})",
-          "situacao": "DESPACHO.*?:[\\s\\n\\\"\\,]*(NAO CONSTA DEBITO|POSSUI DEBITO[\\s\\S]*?\\.)"
+          "situacao": "DESPACHO[_\\s:]*([\\s\\n\\\"\\,]*(?:NAO CONSTA DEBITO|POSSUI DEBITO[\\s\\S]*?\\.))"
         },
         "chaveStatus": "situacao",
         "regras": {

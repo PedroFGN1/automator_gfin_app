@@ -28,7 +28,8 @@
     },
     "files": [
       "src/**/*",
-      "config/**/*",
+      "config/profiles.example.json",
+      "!config/profiles.json",
       "package.json",
       ".cache/**/*",
       "!.cache/jest/**/*"

@@ -16,6 +16,7 @@ const botConsultaGuiaAutenticada = require('../backend/bots/consultar-guia-auten
 const botConsultaCND = require('../backend/bots/consultar-cnd');
 const botAnaliseHonorarios = require('../backend/bots/analise-honorarios-periciais');
 const botAnaliseRestituicoes = require('../backend/bots/analise-restituicoes');
+const botRestituicaoDeducaoReceita = require('../backend/bots/restituicao-deducao-receita');
 
 
 let mainWindow;
@@ -124,6 +125,9 @@ app.whenReady().then(() => {
       };
 
       // Roda o Bot
+      if (perfilId === 'restituicao-deducao-receita') {
+          return await botRestituicaoDeducaoReceita.executarRestituicaoDeducaoReceita(configPerfil, caminhoArquivo, dirSaida, enviarLog, controleExecucao);
+      }
       if (perfilId === 'restituicao-fianca' || perfilId === 'restituicao-icms' || perfilId === 'restituicao-itcd') {
           return await botRestituicao_Fianca_ICMS_ITCD.executarRestituicao_Fianca_ICMS_ITCD(configPerfil, caminhoArquivo, dirSaida, enviarLog, controleExecucao);
       }

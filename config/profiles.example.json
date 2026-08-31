@@ -167,6 +167,42 @@
       }
     },
     {
+      "id": "restituicao-deducao-receita",
+      "nome": "Dedução de Receita com Restituição de Recursos (86)",
+      "url_portal": "https://siafic.exemplo.gov.br/#/",
+      "url_formulario_direto": "https://siofi.exemplo.gov.br/siofi/servlet/control?cmd=EfetuarOPExtra",
+      "url_base_sistema": "https://siofi.exemplo.gov.br/siofi",
+      "configuracoes_fixas": {
+        "texto_selecao_inicial": "Dedução de Receita com Restituição de Recursos",
+        "finalidade_codigo": "86",
+        "orgao_codigo": "0000",
+        "receita_debito_padrao": "000000000000",
+        "tipo_debito_texto": "CUTE",
+        "conta_debito": {
+          "banco": "104",
+          "agencia": "0000",
+          "conta": "00000000000"
+        },
+        "ddr_debito_texto": "0000.00000000.00000.0000",
+        "tipo_credito_texto": "Movimento",
+        "enviar_para_banco": "S",
+        "lista_credores": "N",
+        "rascunho": "N"
+      },
+      "mapeamento_colunas": {
+        "PROCESSO": "Proc. SEI",
+        "DATA": "Data da restituição",
+        "VALOR": "Valor Atualizado",
+        "NOME": "Beneficiário",
+        "CPF_CNPJ": "CPF | CNPJ (Beneficiário)",
+        "RECEITA_DEBITO": "Receita Débito",
+        "BANCO_CREDITO": "Banco",
+        "AGENCIA_CREDITO": "Agência",
+        "CONTA_CREDITO": "Conta",
+        "HISTORICO": "Histórico"
+      }
+    },
+    {
       "id": "marcacao-terminal",
       "nome": "Marcação Terminal (Passo-a-Passo)",
       "url_portal": "https://portal.sefaz.exemplo.gov.br/portalsefaz-apps/",

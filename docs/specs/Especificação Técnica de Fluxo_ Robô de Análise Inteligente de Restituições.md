@@ -55,6 +55,7 @@ A escrita na planilha macro-habilitada `.xlsm` utiliza manipulação cirúrgica 
   * Nenhuma linha é escrita na guia `DARE` (`Marcar DARE`) para evitar duplicidade de dados.
 * **Processo com Múltiplos DAREs**:
   * Os campos `"Documento Referência"` e `"Valor autorizado"` na aba principal do processo recebem o valor literal **`"multiplos dares"`** e o campo de data fica em branco.
+  * O campo de **Município** (`"Código Município"`, comum em restituições de IPVA) **é preservado** na aba principal com o código correspondente do processo/DAREs, garantindo o preenchimento automático pelo robô executor de IPVA.
   * Todas as guias individuais de DARE do processo são detalhadas em linhas separadas na aba `DARE` (`Marcar DARE`), permitindo a conciliação individualizada.
 
 ### 3.2. Relatórios de Auditoria em PDF

@@ -1,6 +1,6 @@
 {
-  "name": "automacao_gefin_app",
-  "version": "1.7.6",
+  "name": "automator_gfin_app",
+  "version": "1.7.7",
   "main": "src/main/main.js",
   "scripts": {
     "start": "electron .",

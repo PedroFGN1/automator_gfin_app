@@ -226,6 +226,29 @@ function extrairValorProcesso(processo, chaveMapeamento) {
     return normalizarTexto(atual);
 }
 
+function extrairValorMunicipio(processo, chaveMapeamento) {
+    let valor = extrairValorProcesso(processo, chaveMapeamento);
+    if (valor) return valor;
+
+    if (Array.isArray(processo.dares_recolhidos)) {
+        for (const dare of processo.dares_recolhidos) {
+            if (!dare) continue;
+            const munDare = dare.codigo_municipio || dare.municipio || dare.cod_municipio || dare.cd_municipio;
+            if (munDare) return normalizarTexto(munDare);
+        }
+    }
+
+    const munRaiz = processo.codigo_muni1cipio || 
+                    processo.municipio || 
+                    processo.cod_municipio || 
+                    processo.cd_municipio || 
+                    processo.veiculo?.codigo_municipio || 
+                    processo.veiculo?.municipio;
+    if (munRaiz) return normalizarTexto(munRaiz);
+
+    return '';
+}
+
 function montarLinhasGuiaPrincipal(processos, configPerfil) {
     const linhasPorGuia = {};
     const alertasMultiplosDares = [];
@@ -252,12 +275,17 @@ function montarLinhasGuiaPrincipal(processos, configPerfil) {
         }
 
         for (const col of cabecalhos) {
+            const isMunicipio = col.chave.toLowerCase().includes('municipio');
             if (isMultiplosDares && col.chave.startsWith('dares_recolhidos.')) {
                 if (col.chave === 'dares_recolhidos.numero_dare' || col.chave.includes('valor')) {
                     linha[col.cabecalho] = 'multiplos dares';
+                } else if (isMunicipio) {
+                    linha[col.cabecalho] = extrairValorMunicipio(processo, col.chave);
                 } else {
                     linha[col.cabecalho] = '';
                 }
+            } else if (isMunicipio) {
+                linha[col.cabecalho] = extrairValorMunicipio(processo, col.chave);
             } else {
                 linha[col.cabecalho] = extrairValorProcesso(processo, col.chave);
             }
@@ -750,6 +778,7 @@ module.exports = {
     resolverChaveMapeamentoGuia,
     resolverNomeGuia,
     extrairValorProcesso,
+    extrairValorMunicipio,
     montarLinhasGuiaPrincipal,
     montarLinhasGuiaDare,
     gravarDadosNaPlanilhaXlsm,

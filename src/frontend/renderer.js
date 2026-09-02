@@ -295,8 +295,8 @@ function renderizarFormulario(json) {
                 <div class="collapse-content space-y-4 pt-4">
                     
                     <div class="grid grid-cols-1 gap-4">
-                        ${criarInput('URL Portal', perfil.url_portal, [...pPath, 'url_portal'], 'text', true)}
-                        ${criarInput('URL Formulário', perfil.url_formulario_direto, [...pPath, 'url_formulario_direto'], 'text', true)}
+                        ${criarInput('URL Portal', perfil.url_portal, [...pPath, 'url_portal'], 'text', false)}
+                        ${criarInput('URL Formulário', perfil.url_formulario_direto, [...pPath, 'url_formulario_direto'], 'text', false)}
                     </div>
 
                     <div class="divider text-xs font-bold text-base-content/50">MAPEAMENTO / EXTRACAO</div>

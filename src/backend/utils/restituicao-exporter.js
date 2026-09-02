@@ -238,7 +238,7 @@ function extrairValorMunicipio(processo, chaveMapeamento) {
         }
     }
 
-    const munRaiz = processo.codigo_muni1cipio || 
+    const munRaiz = processo.codigo_municipio || 
                     processo.municipio || 
                     processo.cod_municipio || 
                     processo.cd_municipio || 

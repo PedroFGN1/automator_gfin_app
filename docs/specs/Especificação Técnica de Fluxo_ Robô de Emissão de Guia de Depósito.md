@@ -3,14 +3,14 @@
 | Atributo | Detalhe |
 | :--- | :--- |
 | **Autor** | Manus AI |
-| **Data** | 08/05/2026 |
-| **Versão** | 1.0 |
+| **Data** | 08/05/2026 (Atualizado: 03/09/2026) |
+| **Versão** | 1.2 |
 | **Arquivo Base** | `src/backend/bots/emissao-guia-deposito.js` |
 | **Perfil ID** | `emissao-guia-deposito` |
 
 ## 1. Visão Geral
 
-O robô **Emissão de Guia de Depósito Judicial** automatiza o processo de geração de guias de depósito no portal da Caixa Econômica Federal. Ele realiza a consulta do processo judicial, preenche os dados das partes (Autor e Réu), identifica o depositante e gera o boleto em PDF, salvando-o como evidência de sucesso.
+O robô **Emissão de Guia de Depósito Judicial** automatiza o processo de geração de guias de depósito no portal da Caixa Econômica Federal. Ele suporta tanto **Primeiro Depósito** (`/estadual/primeiro`) quanto **Depósito em Continuação** (`/estadual/continuacao`), preenche os dados das partes e valores, realiza o aceite de confirmação, avança pela seleção de boleto e captura o PDF e os metadados gerados (ID do Depósito e Código de Barras).
 
 ## 2. Componentes do Sistema
 
@@ -37,40 +37,61 @@ Parâmetros definidos no `profiles.json` que não variam por linha:
 
 ## 3. Fluxo Operacional
 
+```mermaid
+flowchart TD
+    A[1. Início e Validação] --> B[2. Acesso ao Portal Caixa]
+    B --> C[3. Consulta do Processo e Captcha]
+    C --> D[4. Seleção da Competência / Justiça Estadual]
+    D --> E{Rota: Primeiro ou Continuação?}
+    E -- Primeiro Depósito --> F1[5a. Preenchimento de Autor, Réu e Depositante]
+    E -- Continuação --> F2[5b. Autor e Réu fixos; Preenchimento Depositante]
+    F1 --> G[6. Preenchimento de Dados do Depósito]
+    F2 --> G
+    G --> H[7. Validação do Botão Continuar]
+    H --> I[8. Aceite dos Termos #lido-concordado e Confirmação]
+    I --> J[9. Seleção da Forma BOLETO]
+    J --> K[10. Tela Final: Captura de PDF via Blob e Extração de ID/Código]
+    K --> L[11. Retorno e Próximo Processo]
+```
+
 1.  **Inicialização:**
     *   Leitura da planilha e validação de campos obrigatórios.
     *   Criação da estrutura de pastas para logs e evidências.
 2.  **Acesso ao Portal:**
     *   Navegação para `https://novodepositojudicial.caixa.gov.br/judicial`.
 3.  **Consulta de Processo:**
-    *   Inserção do número do processo.
-    *   **Intervenção Humana (se necessário):** O robô detecta se há desafio de Captcha. Caso haja, aguarda a resolução manual e o clique em "Consultar Processo".
+    *   Inserção do número do processo no campo `#in-processo`.
+    *   **Detecção de Captcha:** O robô detecta a presença de desafio de Captcha. Caso não haja, efetua a consulta automática; caso haja, aguarda a resolução do operador.
 4.  **Seleção de Justiça:**
-    *   Identifica e clica no cartão "Justiça Estadual".
-5.  **Preenchimento de Partes:**
-    *   Preenche CPF/CNPJ do Autor e do Réu.
-    *   Seleciona o Depositante como "Outros" e preenche os dados da GFIN.
+    *   Identifica e clica no cartão com título `"Justiça Estadual"` usando evento de hardware para transição de rota SPA.
+5.  **Diferenciação de Rota (Primeiro vs Continuação):**
+    *   **Primeiro Depósito (`/estadual/primeiro`):** Preenchimento de Autor e Réu nos componentes `app-validar-documento` e seleção de depositante "Outros" com CPF/CNPJ do órgão.
+    *   **Depósito em Continuação (`/estadual/continuacao`):** Autor, Réu, Estado e Município vêm pré-preenchidos como texto estático pela Caixa. O robô detecta a ausência de inputs editáveis e prossegue de forma resiliente preenchendo apenas os campos necessários (Depositante "Outros").
 6.  **Dados do Depósito:**
-    *   Preenche telefone, estado e município.
-    *   Insere data de vencimento e valor (com tratamento de máscara).
-    *   Adiciona a observação.
-7.  **Geração e Captura:**
-    *   Clica para gerar a guia.
-    *   Monitora o console do navegador para capturar o stream do PDF gerado.
-    *   Salva o PDF na pasta de evidências com o nome baseado na observação.
-8.  **Finalização:**
-    *   Clica em "Novo Depósito" para resetar o fluxo para a próxima linha.
-    *   Gera relatório consolidado de Sucessos e Erros.
+    *   Preenchimento do telefone e seleção de Estado/Município (quando editáveis).
+    *   **Tratamento de Máscara Monetária (`currencymask`):** Limpeza e emissão de eventos nativos de teclado (`keydown`, `keypress`, `keyup`) para cada dígito numérico, ativando corretamente o `FormControl` reativo do Angular.
+    *   Preenchimento da data de vencimento e campo de observação.
+7.  **Etapa de Confirmação e Aceite de Termos:**
+    *   Inspeção defensiva do botão `Continuar`.
+    *   Marcação do checkbox `#lido-concordado` com disparo de `input` e `change`.
+    *   Espera ativa até que o botão `Confirmar` esteja habilitado (`disabled === false`) antes de clicar.
+8.  **Seleção da Forma de Pagamento:**
+    *   Seleção da opção `BOLETO` (`input[formcontrolname="formaPagamento"][value="BOLETO"]`) e clique em `Continuar`.
+9.  **Captura de PDF e Extração de Metadados (`/judicial/boleto`):**
+    *   Extração direta do DOM da página do **ID do Depósito** e do **Código de Barras**.
+    *   Interceptação de `URL.createObjectURL` e clique no botão `"Ver boleto bancário"`.
+    *   Extração do binário do PDF via `fetch` do `Blob` gerado, validação de integridade (`%PDF-`) e salvamento em arquivo no disco.
+    *   Clique em `"Novo Depósito"` para resetar o fluxo para o próximo registro da planilha.
 
 ## 4. Tratamento de Erros e Exceções
 
-*   **Campos Ausentes:** Validação inicial impede a execução de linhas com dados incompletos.
-*   **Município Inválido:** Se o município da planilha não for encontrado no seletor do portal, a linha é marcada como erro e um print é tirado.
-*   **Timeout de PDF:** Se o portal não retornar o PDF no tempo configurado, o erro é registrado.
-*   **Interrupção:** O robô respeita o comando de "Parar" da interface Electron em qualquer etapa do loop.
+*   **Campos Pré-preenchidos:** Não geram erro; o robô identifica controles somente leitura e aproveita os dados preenchidos pela Caixa.
+*   **Campos Ausentes / Inválidos:** Se algum campo obrigatório não for aceito e o botão `Continuar` permanecer desabilitado, o robô diagnostica quais controles estão com `.ng-invalid` e registra no log.
+*   **Captura de PDF Indireta:** A nova rotina de captura intercepta o `Blob` criado pelo botão de visualização, dispensando a dependência do log de console.
+*   **Interrupção:** O robô respeita o comando de cancelamento da interface gráfica a qualquer momento do ciclo.
 
 ## 5. Requisitos Técnicos
 
 *   **Puppeteer Stealth:** Utilizado para evitar bloqueios de bot no portal da Caixa.
-*   **AngularHelper:** Auxilia na interação com campos dinâmicos do framework Angular utilizado no site.
-*   **Navigation Utils:** Gerencia formatação de datas e moedas para compatibilidade com os inputs.
+*   **AngularHelper / Angular-Utils:** Gerencia eventos reativos do framework (`input`, `change`, `blur`), diretivas de máscara monetária, captura de Blobs de PDF e seletores flexíveis.
+*   **Navigation Utils:** Gerencia formatação de datas e moedas no padrão pt-BR.

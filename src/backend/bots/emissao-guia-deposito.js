@@ -198,45 +198,151 @@ async function selecionarDepositante(page, config) {
     await navUtils.delay(1000);
 }
 
+async function preencherDocumentoParte(page, tipoParte, documento, logTotal) {
+    const docLimpo = normalizarTexto(documento);
+    if (!docLimpo) {
+        logTotal(`   ⚠️ [${tipoParte}] Documento não informado na planilha.`);
+        return false;
+    }
+
+    logTotal(`   ↳ Processando ${tipoParte}: ${docLimpo}`);
+
+    const resultado = await page.evaluate((tipo, valor) => {
+        const tipoNormalizado = tipo.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
+        const componentes = Array.from(document.querySelectorAll('app-validar-documento'));
+        
+        // 1. Busca por atributo nome ou label
+        let componenteAlvo = componentes.find(c => {
+            const nome = (c.getAttribute('nome') || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
+            const label = (c.getAttribute('label') || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
+            return nome.includes(tipoNormalizado) || label.includes(tipoNormalizado);
+        });
+
+        // 2. Fallback por índice caso não encontre por atributo
+        if (!componenteAlvo) {
+            if (tipoNormalizado.includes('autor') && componentes.length > 0) componenteAlvo = componentes[0];
+            else if (tipoNormalizado.includes('reu') && componentes.length > 1) componenteAlvo = componentes[1];
+            else if (tipoNormalizado.includes('depositante') && componentes.length > 2) componenteAlvo = componentes[2];
+        }
+
+        // Se não houver componente editável ou se for tela de continuação (campos estáticos)
+        if (!componenteAlvo) {
+            return { editavel: false, preenchido: true, motivo: 'Componente app-validar-documento não presente (campo fixo/pré-preenchido)' };
+        }
+
+        const input = componenteAlvo.querySelector('input');
+        if (!input || input.readOnly || input.disabled) {
+            return { editavel: false, preenchido: true, motivo: 'Input não editável ou pré-preenchido' };
+        }
+
+        input.focus();
+        input.value = '';
+        input.value = valor;
+
+        input.dispatchEvent(new Event('input', { bubbles: true }));
+        input.dispatchEvent(new Event('change', { bubbles: true }));
+        input.blur();
+        input.dispatchEvent(new Event('blur', { bubbles: true }));
+        return { editavel: true, preenchido: true };
+    }, tipoParte, docLimpo);
+
+    if (resultado && !resultado.editavel) {
+        logTotal(`   ℹ️ [${tipoParte}] ${resultado.motivo}. Prosseguindo com dados existentes.`);
+        return true;
+    }
+
+    // Aguarda processamento do spinner interno do Angular se houver
+    await page.waitForFunction(() => {
+        const spinners = document.querySelectorAll('app-loading ngx-spinner, .spinner-border');
+        return Array.from(spinners).every(s => s.offsetParent === null);
+    }, { timeout: 5000 }).catch(() => {});
+
+    return true;
+}
+
+async function preencherCampoValorMonetario(page, seletor, valor) {
+    await page.waitForSelector(seletor, { visible: true, timeout: 15000 });
+
+    const sucesso = await page.evaluate((sel, valorBruto) => {
+        let numero;
+        if (typeof valorBruto === 'number') {
+            numero = valorBruto;
+        } else {
+            let str = String(valorBruto || '').replace(/R\$/gi, '').trim();
+            if (str.includes(',') && str.includes('.')) {
+                if (str.indexOf('.') < str.indexOf(',')) {
+                    str = str.replace(/\./g, '').replace(',', '.');
+                } else {
+                    str = str.replace(/,/g, '');
+                }
+            } else if (str.includes(',')) {
+                str = str.replace(',', '.');
+            }
+            numero = parseFloat(str);
+        }
+
+        if (isNaN(numero)) numero = 0;
+        const digitos = numero.toFixed(2).replace(/\D/g, '');
+
+        const input = document.querySelector(sel);
+        if (!input) return false;
+
+        input.focus();
+        document.execCommand('selectAll', false, null);
+        document.execCommand('delete', false, null);
+
+        // Dispara os eventos de teclado que a diretiva currencymask (ngx-currency) escuta para popular o FormControl
+        for (const ch of digitos) {
+            const code = ch.charCodeAt(0);
+            input.dispatchEvent(new KeyboardEvent('keydown', { key: ch, keyCode: code, which: code, bubbles: true }));
+            input.dispatchEvent(new KeyboardEvent('keypress', { key: ch, keyCode: code, which: code, bubbles: true }));
+            input.dispatchEvent(new KeyboardEvent('keyup', { key: ch, keyCode: code, which: code, bubbles: true }));
+        }
+
+        input.dispatchEvent(new Event('input', { bubbles: true }));
+        input.dispatchEvent(new Event('change', { bubbles: true }));
+        input.blur();
+        input.dispatchEvent(new Event('blur', { bubbles: true }));
+
+        return !input.classList.contains('ng-invalid');
+    }, seletor, valor);
+
+    if (!sucesso) {
+        throw new Error(`Falha ao validar o campo de valor monetário no Angular: ${seletor}`);
+    }
+}
+
+async function preencherInputComMascara(page, seletor, valor) {
+    await page.waitForSelector(seletor, { visible: true, timeout: 15000 });
+    
+    await page.evaluate((sel, val) => {
+        const input = document.querySelector(sel);
+        if (!input) return;
+        input.focus();
+        input.value = '';
+        input.value = val;
+        input.dispatchEvent(new Event('input', { bubbles: true }));
+        input.dispatchEvent(new Event('change', { bubbles: true }));
+        input.blur();
+        input.dispatchEvent(new Event('blur', { bubbles: true }));
+    }, seletor, valor);
+}
+
 async function preencherDadosPartes(page, linha, configPerfil, config, logTotal) {
     const mapa = configPerfil.mapeamento_colunas;
     logTotal('👥 Preenchendo dados das partes...');
-    const autorPreenchido = await angUtils.preencherOuIgnorar(
-        page,
-        config.seletores.autor,
-        normalizarTexto(valorDaLinha(linha, mapa, 'CPF_CNPJ_AUTOR')),
-        'CPF/CNPJ Autor'
-    );
-    if (autorPreenchido) await navUtils.delay(1000);
 
-    const reuPreenchido = await angUtils.preencherOuIgnorar(
-        page,
-        config.seletores.reu,
-        normalizarTexto(valorDaLinha(linha, mapa, 'CPF_CNPJ_REU')),
-        'CPF/CNPJ Réu'
-    );
-    if (reuPreenchido) await navUtils.delay(1000);
+    await preencherDocumentoParte(page, 'Autor', valorDaLinha(linha, mapa, 'CPF_CNPJ_AUTOR'), logTotal);
+    await navUtils.delay(1000);
+
+    await preencherDocumentoParte(page, 'Réu', valorDaLinha(linha, mapa, 'CPF_CNPJ_REU'), logTotal);
+    await navUtils.delay(1000);
 
     logTotal('🏦 Selecionando depositante como "Outros"...');
     await selecionarDepositante(page, config);
 
-    await angUtils.preencherOuIgnorar(
-        page,
-        config.seletores.depositanteDocumento,
-        valorFixo(config, 'CPF_CNPJ_DEPOSITANTE'),
-        'CPF/CNPJ Depositante'
-    );
+    await preencherDocumentoParte(page, 'Depositante', valorFixo(config, 'CPF_CNPJ_DEPOSITANTE'), logTotal);
     await navUtils.delay(1000);
-}
-
-async function preencherInputComMascara(page, seletor, valor) {
-    await page.waitForSelector(seletor, { visible: true });
-    const input = await page.$(seletor);
-    if (!input) throw new Error(`Campo não encontrado: ${seletor}`);
-    await input.click();
-    await input.click({ clickCount: 3 });
-    await page.keyboard.press('Backspace');
-    await page.type(seletor, valor);
 }
 
 async function preencherDadosDeposito(page, linha, configPerfil, config, logTotal) {
@@ -255,7 +361,7 @@ async function preencherDadosDeposito(page, linha, configPerfil, config, logTota
         config.estado_value,
         'Estado'
     );
-    if (estadoSelecionado) await navUtils.delay(1000);
+    if (estadoSelecionado) await navUtils.delay(1500);
 
     try {
         const municipioSelecionado = await angUtils.selecionarOuIgnorar(
@@ -271,7 +377,7 @@ async function preencherDadosDeposito(page, linha, configPerfil, config, logTota
     }
 
     await preencherInputComMascara(page, config.seletores.dataVencimento, dataVencimento);
-    await preencherInputComMascara(page, config.seletores.valor, navUtils.formatarMoeda(valor));
+    await preencherCampoValorMonetario(page, config.seletores.valor, valor);
 
     await page.waitForSelector(config.seletores.observacao, { visible: true });
     await angUtils.preencherCampoAngular(page, config.seletores.observacao, observacao);
@@ -282,25 +388,34 @@ async function gerarBoleto(page, helper, config, diretorios, logTotal, observaca
     const pastaPdf = config.pasta_pdf
         ? path.join(diretorios.evidencias, config.pasta_pdf)
         : diretorios.evidencias;
-    logTotal('📄 Gerando boleto e aguardando PDF...');
+    logTotal('📄 Avançando etapas de pagamento e gerando guia...');
 
-    const promessaDoBoleto = angUtils.prepararCapturaDeBoletoPeloConsole(page, pastaPdf, {
+    // 1. Executa a seleção de BOLETO e avanço até a tela final de emissão
+    await angUtils.selecionarBoletoEContinuar(page, helper);
+
+    // 2. Na tela /judicial/boleto, captura o PDF e os dados do boleto
+    logTotal('📥 Capturando PDF e dados da guia gerada...');
+    const resultado = await angUtils.capturarPdfBoletoCaixa(page, pastaPdf, {
         timeoutMs: config.timeout_pdf_ms,
         nomeArquivo: observacao
     });
-
-    await angUtils.selecionarBoletoEContinuar(page, helper);
-    const resultado = await promessaDoBoleto;
 
     if (!resultado || !resultado.sucesso) {
         throw new Error(resultado?.erro || 'PDF não capturado.');
     }
 
+    logTotal(`✅ Boleto salvo com sucesso: ${resultado.caminho}`);
+    if (resultado.idDeposito) logTotal(`   ↳ ID Depósito: ${resultado.idDeposito}`);
+    if (resultado.codigoBarra) logTotal(`   ↳ Código de Barras: ${resultado.codigoBarra}`);
+
     await navUtils.delay(2000);
 
-    const btnNovoDeposito = await page.waitForSelector('button.btn-primary::-p-text(Novo Depósito)', { visible: true, timeout: 15000 });
-    if (!btnNovoDeposito) throw new Error("Botão 'Novo Depósito' não encontrado.");
-    await btnNovoDeposito.click();
+    // 3. Clica em Novo Depósito para resetar o fluxo para o próximo processo
+    const btnNovoDeposito = await page.waitForSelector('button::-p-text(Novo Depósito), button.btn-primary', { visible: true, timeout: 15000 });
+    if (btnNovoDeposito) {
+        await btnNovoDeposito.click();
+        await navUtils.delay(2000);
+    }
 
     return resultado;
 }
@@ -373,11 +488,25 @@ async function executarEmissaoGuiaDeposito(configPerfil, caminhoExcel, diretorio
         const helper = new AngularHelper(page);
         page.setDefaultTimeout(config.timeout_padrao_ms);
 
+        const fecharAbasExtras = async () => {
+            try {
+                const todasAbas = await browser.pages();
+                for (const aba of todasAbas) {
+                    if (aba !== page && !aba.isClosed()) {
+                        await aba.close().catch(() => {});
+                    }
+                }
+                await page.bringToFront().catch(() => {});
+            } catch (e) {}
+        };
+
         for (let i = 0; i < dados.length; i++) {
             if (controle && controle.abortar) {
                 logTotal('⏹️ Processo interrompido pelo usuário.');
                 break;
             }
+
+            await fecharAbasExtras();
 
             const linha = dados[i];
             const numLinha = i + 1;
@@ -400,6 +529,8 @@ async function executarEmissaoGuiaDeposito(configPerfil, caminhoExcel, diretorio
                     mensagem: erroLinha.message,
                     numeroOP: ''
                 });
+            } finally {
+                await fecharAbasExtras();
             }
         }
 

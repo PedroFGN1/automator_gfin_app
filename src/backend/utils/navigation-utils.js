@@ -32,8 +32,29 @@ function formatarData(data) {
 }
 
 function formatarMoeda(valor) {
-    if (!valor) return '0,00';
-    return new Intl.NumberFormat('pt-BR', { minimumFractionDigits: 2 }).format(valor);
+    if (valor === null || valor === undefined || valor === '') return '0,00';
+
+    let numero;
+    if (typeof valor === 'number') {
+        numero = valor;
+    } else {
+        let str = String(valor).replace(/R\$/gi, '').trim();
+        if (str.includes(',') && str.includes('.')) {
+            if (str.indexOf('.') < str.indexOf(',')) {
+                // Formato pt-BR: 2.063,90
+                str = str.replace(/\./g, '').replace(',', '.');
+            } else {
+                // Formato en-US: 2,063.90
+                str = str.replace(/,/g, '');
+            }
+        } else if (str.includes(',')) {
+            str = str.replace(',', '.');
+        }
+        numero = parseFloat(str);
+    }
+
+    if (isNaN(numero)) return '0,00';
+    return new Intl.NumberFormat('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(numero);
 }
 
 // Faz o slice de forma segura (retorna vazio se for null/undefined)

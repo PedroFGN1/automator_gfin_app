@@ -95,14 +95,26 @@ app.whenReady().then(() => {
   // 1. Handler para Selecionar Arquivo
   ipcMain.handle('dialog:openFile', async (event, perfilId) => {
       const isEntradaPdf = perfilId === 'consultar-cnd' || perfilId === 'analise-honorarios-periciais' || perfilId === 'analise-restituicoes';
-      const { canceled, filePaths } = await dialog.showOpenDialog({
-          properties: isEntradaPdf ? ['openFile', 'multiSelections'] : ['openFile'],
-          filters: isEntradaPdf
-            ? [{ name: 'PDF', extensions: ['pdf'] }]
-            : [{ name: 'Excel', extensions: ['xlsx'] }]
-      });
+      const isConsultaGuia = perfilId === 'consultar-guia-autenticada';
+
+      let properties = ['openFile'];
+      let filters = [{ name: 'Excel', extensions: ['xlsx'] }];
+
+      if (isEntradaPdf) {
+          properties = ['openFile', 'multiSelections'];
+          filters = [{ name: 'PDF', extensions: ['pdf'] }];
+      } else if (isConsultaGuia) {
+          properties = ['openFile', 'multiSelections'];
+          filters = [
+              { name: 'Planilhas Excel ou Guias PDF', extensions: ['xlsx', 'pdf'] },
+              { name: 'Guias em PDF', extensions: ['pdf'] },
+              { name: 'Planilhas Excel', extensions: ['xlsx'] }
+          ];
+      }
+
+      const { canceled, filePaths } = await dialog.showOpenDialog({ properties, filters });
       if (canceled) return null;
-      return isEntradaPdf ? filePaths : filePaths[0];
+      return (isEntradaPdf || isConsultaGuia) ? filePaths : filePaths[0];
   });
 
   // 2. Handler para Iniciar o Bot

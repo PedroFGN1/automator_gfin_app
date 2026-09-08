@@ -75,25 +75,74 @@ async function capturarPdfBoletoCaixa(page, pastaDownload, opcoes = {}) {
 
     // 2. Extrai dados textuais gerados na tela (Código de Barras e ID do Depósito)
     const dadosTela = await page.evaluate(() => {
-        const todosTextos = Array.from(document.querySelectorAll('h1, h2, h3, h4, h5, h6, span, p, div, strong, b, button'))
-            .map(el => el.innerText.trim())
-            .filter(Boolean);
+        const textoPagina = document.body ? document.body.innerText : '';
+        const folhas = Array.from(document.querySelectorAll('h1, h2, h3, h4, h5, h6, span, p, div, strong, b'))
+            .filter(el => el.children.length === 0)
+            .map(el => ({ texto: (el.innerText || '').trim(), tag: el.tagName }));
 
-        // Código de barras (linha digitável com ~47-48 dígitos numéricos)
-        const codigoBarra = todosTextos.find(t => /^\d{40,55}$/.test(t.replace(/\s+/g, ''))) || '';
+        const texto = String(textoPagina || '');
 
-        // ID de depósito (ex: "040253501662609038" ou procurando por "ID do seu depósito:")
+        // 1. Código de barras (linha digitável com ~44-55 dígitos numéricos)
+        let codigoBarra = '';
+        const matchBarra = texto.match(/\b(\d{44,55})\b/);
+        if (matchBarra) {
+            codigoBarra = matchBarra[1];
+        } else {
+            const matchFormatado = texto.match(/(\d{5}[\.\s]?\d{5}[\.\s]?\d{5}[\.\s]?\d{6}[\.\s]?\d{5}[\.\s]?\d{14})/);
+            if (matchFormatado) {
+                codigoBarra = matchFormatado[1].replace(/\D/g, '');
+            } else {
+                const elBarra = folhas.find(el => {
+                    const limpo = el.texto.replace(/\s+/g, '');
+                    return /^\d{44,55}$/.test(limpo);
+                });
+                if (elBarra) codigoBarra = elBarra.texto.replace(/\s+/g, '');
+            }
+        }
+
+        // 2. ID de Depósito (ancorado explicitamente após o rótulo)
         let idDeposito = '';
-        const textoId = todosTextos.find(t => t.includes('ID do seu depósito'));
-        if (textoId) {
-            const match = textoId.match(/(\d{15,25})/);
-            if (match) idDeposito = match[1];
-        }
-        if (!idDeposito) {
-            idDeposito = todosTextos.find(t => /^\d{16,20}$/.test(t)) || '';
+        const regexAposRotulo = /(?:Este\s+[eé]\s+o\s+)?ID(?:\s+do\s+seu\s+dep[oó]sito)?\s*[:\-]?\s*(\d{15,25})/i;
+        const matchRotulo = texto.match(regexAposRotulo);
+        if (matchRotulo && matchRotulo[1]) {
+            const cand = matchRotulo[1].trim();
+            if (cand !== codigoBarra && (!codigoBarra || !codigoBarra.startsWith(cand))) {
+                idDeposito = cand;
+            }
         }
 
-        return { idDeposito, codigoBarra: codigoBarra.replace(/\s+/g, '') };
+        // Fallback A: inspeciona elementos folha com o rótulo
+        if (!idDeposito) {
+            for (const f of folhas) {
+                const m = f.texto.match(regexAposRotulo);
+                if (m && m[1]) {
+                    const c = m[1].trim();
+                    if (c !== codigoBarra && (!codigoBarra || !codigoBarra.startsWith(c))) {
+                        idDeposito = c;
+                        break;
+                    }
+                }
+            }
+        }
+
+        // Fallback B: elemento folha cujo texto seja exclusivamente uma sequência de 16 a 20 dígitos
+        if (!idDeposito) {
+            const candFolha = folhas.find(f => {
+                const limpo = f.texto.trim();
+                return /^\d{16,20}$/.test(limpo) && limpo !== codigoBarra && (!codigoBarra || !codigoBarra.startsWith(limpo));
+            });
+            if (candFolha) idDeposito = candFolha.texto.trim();
+        }
+
+        // Sanidade: se ainda assim coincidir com o código de barras, anula
+        if (idDeposito && codigoBarra && (idDeposito === codigoBarra || codigoBarra.startsWith(idDeposito))) {
+            idDeposito = '';
+        }
+
+        return {
+            idDeposito: (idDeposito || '').trim(),
+            codigoBarra: (codigoBarra || '').trim()
+        };
     });
 
     console.log(`Dados extraídos da tela: ID=${dadosTela.idDeposito || '(não encontrado)'} | Código de Barras=${dadosTela.codigoBarra || '(não encontrado)'}`);
@@ -565,6 +614,79 @@ async function selecionarBoletoEContinuar(page, helper) {
     }
 }
 
+/**
+ * Extrai Código de Barras e ID de Depósito a partir do texto ou elementos folha da página final de boleto.
+ *
+ * @param {string} textoPagina - Texto consolidado da página.
+ * @param {Array<{texto: string, tag?: string}>} [folhas=[]] - Lista opcional de elementos folhas.
+ * @returns {{ idDeposito: string, codigoBarra: string }}
+ */
+function extrairDadosBoleto(textoPagina = '', folhas = []) {
+    const texto = String(textoPagina || '');
+
+    // 1. Código de barras (linha digitável com ~44-55 dígitos numéricos)
+    let codigoBarra = '';
+    const matchBarra = texto.match(/\b(\d{44,55})\b/);
+    if (matchBarra) {
+        codigoBarra = matchBarra[1];
+    } else {
+        const matchFormatado = texto.match(/(\d{5}[\.\s]?\d{5}[\.\s]?\d{5}[\.\s]?\d{6}[\.\s]?\d{5}[\.\s]?\d{14})/);
+        if (matchFormatado) {
+            codigoBarra = matchFormatado[1].replace(/\D/g, '');
+        } else if (Array.isArray(folhas)) {
+            const elBarra = folhas.find(el => {
+                const limpo = (el.texto || '').replace(/\s+/g, '');
+                return /^\d{44,55}$/.test(limpo);
+            });
+            if (elBarra) codigoBarra = elBarra.texto.replace(/\s+/g, '');
+        }
+    }
+
+    // 2. ID de Depósito (ancorado explicitamente após o rótulo)
+    let idDeposito = '';
+    const regexAposRotulo = /(?:Este\s+[eé]\s+o\s+)?ID(?:\s+do\s+seu\s+dep[oó]sito)?\s*[:\-]?\s*(\d{15,25})/i;
+    const matchRotulo = texto.match(regexAposRotulo);
+    if (matchRotulo && matchRotulo[1]) {
+        const cand = matchRotulo[1].trim();
+        if (cand !== codigoBarra && (!codigoBarra || !codigoBarra.startsWith(cand))) {
+            idDeposito = cand;
+        }
+    }
+
+    // Fallback A: inspeciona elementos folha com o rótulo
+    if (!idDeposito && Array.isArray(folhas)) {
+        for (const f of folhas) {
+            const m = (f.texto || '').match(regexAposRotulo);
+            if (m && m[1]) {
+                const c = m[1].trim();
+                if (c !== codigoBarra && (!codigoBarra || !codigoBarra.startsWith(c))) {
+                    idDeposito = c;
+                    break;
+                }
+            }
+        }
+    }
+
+    // Fallback B: elemento folha cujo texto seja exclusivamente uma sequência de 16 a 20 dígitos
+    if (!idDeposito && Array.isArray(folhas)) {
+        const candFolha = folhas.find(f => {
+            const limpo = (f.texto || '').trim();
+            return /^\d{16,20}$/.test(limpo) && limpo !== codigoBarra && (!codigoBarra || !codigoBarra.startsWith(limpo));
+        });
+        if (candFolha) idDeposito = (candFolha.texto || '').trim();
+    }
+
+    // Sanidade: se ainda assim coincidir com o código de barras, anula
+    if (idDeposito && codigoBarra && (idDeposito === codigoBarra || codigoBarra.startsWith(idDeposito))) {
+        idDeposito = '';
+    }
+
+    return {
+        idDeposito: (idDeposito || '').trim(),
+        codigoBarra: (codigoBarra || '').trim()
+    };
+}
+
 async function finalizarECapturarBoletoPeloConsole(page, pastaDownload, helper) {
     await helper.waitForAngularReady({ debug: true });
     return prepararCapturaDeBoletoPeloConsole(page, pastaDownload, { timeoutMs: 20000 });
@@ -575,6 +697,7 @@ module.exports = {
     sanitizarNomeArquivoPdf,
     resolverNomeArquivoPdfUnico,
     normalizarTextoParaComparacao,
+    extrairDadosBoleto,
     capturarPdfBoletoCaixa,
     prepararCapturaDeBoletoPeloConsole,
     resgatarSelectPorLabel,

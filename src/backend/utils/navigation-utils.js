@@ -1,15 +1,63 @@
 const delay = (ms) => new Promise(resolve => setTimeout(resolve, ms));
 
+function obterDataHoje() {
+    const hoje = new Date();
+    return new Date(Date.UTC(hoje.getFullYear(), hoje.getMonth(), hoje.getDate(), 0, 0, 0));
+}
+
 function tratarData(valorExcel) {
+    if (valorExcel === null || valorExcel === undefined || valorExcel === '') {
+        return null;
+    }
+
     // Se o Excel devolver número serial (ex: 45300)
     if (typeof valorExcel === 'number') {
         const data = new Date(Math.round((valorExcel - 25569) * 86400 * 1000));
-        data.setMinutes(data.getMinutes() + data.getTimezoneOffset()); // Ajuste fuso
-        return data;
+        return data; // Já normalizado em UTC meia-noite
     }
-    // Se for string "2024-01-22" ou "22/01/2024"
-    const data = new Date(valorExcel);
-    return data; // Retorna objeto Date do JS
+
+    // Se já for um objeto Date
+    if (valorExcel instanceof Date) {
+        if (isNaN(valorExcel.getTime())) return null;
+        // Se for UTC meia-noite exata (típico de células de data lidas pelo ExcelJS)
+        if (valorExcel.getUTCHours() === 0 && valorExcel.getUTCMinutes() === 0 && valorExcel.getUTCSeconds() === 0 && valorExcel.getUTCMilliseconds() === 0) {
+            return valorExcel;
+        }
+        // Se tiver hora (ex: new Date() gerado no fuso local), o dia civil pretendido é a data local do operador
+        return new Date(Date.UTC(valorExcel.getFullYear(), valorExcel.getMonth(), valorExcel.getDate(), 0, 0, 0));
+    }
+
+    // Se for string
+    if (typeof valorExcel === 'string') {
+        const str = valorExcel.trim();
+        if (!str) return null;
+
+        // Formato brasileiro: DD/MM/YYYY ou DD-MM-YYYY (com hora opcional)
+        let m = str.match(/^(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{4})/);
+        if (m) {
+            const dia = parseInt(m[1], 10);
+            const mes = parseInt(m[2], 10);
+            const ano = parseInt(m[3], 10);
+            return new Date(Date.UTC(ano, mes - 1, dia, 0, 0, 0));
+        }
+
+        // Formato ISO: YYYY-MM-DD
+        m = str.match(/^(\d{4})[\/\-](\d{1,2})[\/\-](\d{1,2})/);
+        if (m) {
+            const ano = parseInt(m[1], 10);
+            const mes = parseInt(m[2], 10);
+            const dia = parseInt(m[3], 10);
+            return new Date(Date.UTC(ano, mes - 1, dia, 0, 0, 0));
+        }
+
+        // Fallback para outros formatos de string parseáveis
+        const parsed = new Date(str);
+        if (!isNaN(parsed.getTime())) {
+            return new Date(Date.UTC(parsed.getFullYear(), parsed.getMonth(), parsed.getDate(), 0, 0, 0));
+        }
+    }
+
+    return null;
 }
 
 /**
@@ -21,13 +69,12 @@ function tratarData(valorExcel) {
  */
 function formatarData(data) {
     if (!data) return '';
-    if (!(data instanceof Date)) {
-        data = new Date(data);
-    }
-    // Use UTC components so que a conversão não seja afetada pelo fuso local
-    const dia = String(data.getUTCDate()).padStart(2, '0');
-    const mes = String(data.getUTCMonth() + 1).padStart(2, '0');
-    const ano = data.getUTCFullYear();
+    const d = (data instanceof Date) ? tratarData(data) : tratarData(data);
+    if (!d || isNaN(d.getTime())) return '';
+    // Use UTC components para manter fidelidade ao dia civil normalizado
+    const dia = String(d.getUTCDate()).padStart(2, '0');
+    const mes = String(d.getUTCMonth() + 1).padStart(2, '0');
+    const ano = d.getUTCFullYear();
     return `${dia}/${mes}/${ano}`;
 }
 
@@ -64,4 +111,4 @@ const safeSlice = (valor, inicio, fim) => {
     return str.slice(inicio, fim !== undefined ? fim : str.length);
 };
 
-module.exports = { delay, tratarData, formatarMoeda, formatarData, safeSlice };
+module.exports = { delay, tratarData, formatarMoeda, formatarData, safeSlice, obterDataHoje };

@@ -57,11 +57,37 @@ async function lerExcelInput(caminhoArquivo) {
         const linhaString = JSON.stringify(linhaObj);
         if (!linhasUnicas.has(linhaString)) {
             linhasUnicas.add(linhaString);
-            dados.push(linhaObj);
+            dados.push(criarLinhaProxy(linhaObj));
         }
     });
 
     return dados;
+}
+
+// Cria proxy para permitir acesso a propriedades insensível a maiúsculas/minúsculas e espaços
+function criarLinhaProxy(linhaObj) {
+    return new Proxy(linhaObj, {
+        get(target, prop) {
+            if (typeof prop === 'string' && !(prop in target)) {
+                const lower = prop.trim().toLowerCase();
+                const foundKey = Object.keys(target).find(k => k.trim().toLowerCase() === lower);
+                if (foundKey) return target[foundKey];
+            }
+            return target[prop];
+        }
+    });
+}
+
+function obterValorColuna(linha, nomeColuna) {
+    if (!linha || !nomeColuna) return undefined;
+    if (linha[nomeColuna] !== undefined) return linha[nomeColuna];
+    const lower = String(nomeColuna).trim().toLowerCase();
+    for (const key of Object.keys(linha)) {
+        if (String(key).trim().toLowerCase() === lower) {
+            return linha[key];
+        }
+    }
+    return undefined;
 }
 
 // 3. Gera os relatórios de Sucesso e Erro
@@ -110,5 +136,6 @@ async function exportarRelatorios(caminhoPlanilhas, listaResultados) {
 module.exports = { 
     prepararDiretorios, 
     lerExcelInput, 
-    exportarRelatorios 
+    exportarRelatorios,
+    obterValorColuna
 };

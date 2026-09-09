@@ -1,4 +1,4 @@
-﻿const puppeteer = require('puppeteer');
+const puppeteer = require('puppeteer');
 const path = require('path');
 const fileUtils = require('../utils/file-utils');
 const pptUtils = require('../utils/puppeteer-utils');
@@ -123,7 +123,7 @@ async function executarRestituicaoDeducaoReceita(configPerfil, caminhoExcel, dir
                     dataObj = navUtils.tratarData(dataRestituicao);
                 }
                 if (!dataObj) {
-                    dataObj = navUtils.tratarData(new Date());
+                    dataObj = navUtils.obterDataHoje();
                 }
 
                 if (dataObj) {

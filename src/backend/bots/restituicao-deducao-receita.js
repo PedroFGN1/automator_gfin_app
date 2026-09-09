@@ -209,10 +209,9 @@ async function executarRestituicaoDeducaoReceita(configPerfil, caminhoExcel, dir
 
                 // DDR Débito (se aplicável ao perfil)
                 if (configPerfil.configuracoes_fixas.ddr_debito_texto) {
-                    const cboDdr = await contexto.$('select[name="cboDDRDebito"], select[name="cboNomeFonteDebito"]');
+                    const cboDdr = await contexto.$('select[name="cboDDRDebito"]');
                     if (cboDdr) {
-                        const nomeSelect = await contexto.evaluate(el => el.name, cboDdr);
-                        await pptUtils.selecionarOpcaoPorTexto(contexto, nomeSelect, configPerfil.configuracoes_fixas.ddr_debito_texto);
+                        await pptUtils.selecionarOpcaoPorTexto(contexto, 'cboDDRDebito', configPerfil.configuracoes_fixas.ddr_debito_texto);
                         await navUtils.delay(500);
                     }
                 }

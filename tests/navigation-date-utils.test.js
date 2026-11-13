@@ -1,4 +1,8 @@
-﻿const navUtils = require('../src/backend/utils/navigation-utils');
+﻿const path = require('path');
+const os = require('os');
+const fs = require('fs');
+const ExcelJS = require('exceljs');
+const navUtils = require('../src/backend/utils/navigation-utils');
 const fileUtils = require('../src/backend/utils/file-utils');
 
 describe('Utilitários de Data e Leitura de Planilha', () => {
@@ -71,11 +75,29 @@ describe('Utilitários de Data e Leitura de Planilha', () => {
     });
 
     describe('fileUtils.lerExcelInput - Case Insensitive', () => {
+        const caminhoTempExcel = path.join(os.tmpdir(), `teste_case_insensitive_${Date.now()}.xlsx`);
+
+        beforeAll(async () => {
+            const wb = new ExcelJS.Workbook();
+            const ws = wb.addWorksheet('Planilha1');
+            ws.columns = [
+                { header: 'Data da Restituição', key: 'data' }
+            ];
+            ws.addRow({ data: '08/09/2026' });
+            await wb.xlsx.writeFile(caminhoTempExcel);
+        });
+
+        afterAll(() => {
+            if (fs.existsSync(caminhoTempExcel)) {
+                fs.unlinkSync(caminhoTempExcel);
+            }
+        });
+
         test('deve permitir acesso à coluna mesmo com variação de maiúsculas/minúsculas', async () => {
-            const dados = await fileUtils.lerExcelInput('teste 1.xlsx');
+            const dados = await fileUtils.lerExcelInput(caminhoTempExcel);
             expect(dados.length).toBeGreaterThan(0);
             const linha = dados[0];
-            // O arquivo teste 1.xlsx possui cabeçalho "Data da Restituição"
+            // O arquivo possui cabeçalho "Data da Restituição"
             expect(linha['Data da Restituição']).toBeDefined();
             // Via chave do perfil com "r" minúsculo:
             expect(linha['Data da restituição']).toBeDefined();

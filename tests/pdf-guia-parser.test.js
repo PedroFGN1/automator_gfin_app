@@ -1,8 +1,33 @@
 const path = require('path');
+const fs = require('fs');
+const os = require('os');
+const zlib = require('zlib');
 const { extrairDadosGuiaPdf, formatarProcessoCnj } = require('../src/backend/utils/pdf-guia-parser');
 
 describe('Parser Nativo de Guias Judiciais em PDF', () => {
-    const caminhoGuiaExemplo = path.join(__dirname, '..', 'SEI - 202600004052861 - Goiânia.pdf');
+    const nomeArquivoPdf = 'SEI - 202600004052861 - Goiânia.pdf';
+    const caminhoGuiaExemplo = path.join(os.tmpdir(), nomeArquivoPdf);
+
+    beforeAll(() => {
+        const conteudoStream = `
+/txtTedJudicialId /V (040253501912609030)
+/txtObservacao /V (SEI - 202600004052861 - Goiânia)
+/txtProcesso /V (56922056020228090051)
+`;
+        const compactado = zlib.deflateSync(Buffer.from(conteudoStream, 'latin1'));
+        const bufferPdf = Buffer.concat([
+            Buffer.from('%PDF-1.4\n1 0 obj\n<< /Length ' + compactado.length + ' /Filter /FlateDecode >>\nstream\r\n'),
+            compactado,
+            Buffer.from('\r\nendstream\nendobj\ntrailer\n<< >>\n%%EOF')
+        ]);
+        fs.writeFileSync(caminhoGuiaExemplo, bufferPdf);
+    });
+
+    afterAll(() => {
+        if (fs.existsSync(caminhoGuiaExemplo)) {
+            fs.unlinkSync(caminhoGuiaExemplo);
+        }
+    });
 
     test('Deve extrair ID de Depósito, Observação e Processo da guia PDF de exemplo', () => {
         const dados = extrairDadosGuiaPdf(caminhoGuiaExemplo);

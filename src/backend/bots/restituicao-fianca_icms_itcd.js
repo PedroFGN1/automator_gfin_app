@@ -287,14 +287,14 @@ async function executarRestituicao_Fianca_ICMS_ITCD(configPerfil, caminhoExcel, 
                     await page.waitForSelector('.titulo2', { timeout: 5000 });
                     
                     textoCapturado = await page.$eval('.titulo2', el => el.innerText);
-                    // O texto vem como: "OP extra-orçamentária n 2026.9995.0739 efetuada com sucesso."
+                    // O texto vem como: "OP extra-orçamentária n 2026.9995.0739 efetuada com sucesso." ou com 5 algarismos no final (ex: 2026.9995.10000)
 
                     // LIMPEZA (REGEX)
-                    // Procura por um padrão de números e pontos (ex: 2026.9995.0739)
-                    const match = textoCapturado.match(/[\d]{4}\.[\d]{4}\.[\d]{4}/);
+                    // Procura por um padrão de números e pontos (ex: 2026.9995.0739 ou 2026.9995.10000)
+                    const match = textoCapturado.match(/\b\d{4}\.\d{4}\.\d{4,}\b/);
                     
                     if (match) {
-                        numeroOP = match[0]; // Pega apenas "2026.9995.0739"
+                        numeroOP = match[0]; // Pega apenas a OP formatada (ex: "2026.9995.10000")
                     } else {
                         numeroOP = textoCapturado; // Se não achar o padrão, salva o texto todo por segurança
                     }

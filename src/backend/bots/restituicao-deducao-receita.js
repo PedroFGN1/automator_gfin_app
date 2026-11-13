@@ -326,7 +326,7 @@ async function executarRestituicaoDeducaoReceita(configPerfil, caminhoExcel, dir
                     await page.waitForSelector('.titulo2', { timeout: 5000 });
                     textoCapturado = await page.$eval('.titulo2', el => el.innerText);
 
-                    const match = textoCapturado.match(/[\d]{4}\.[\d]{4}\.[\d]{4}/);
+                    const match = textoCapturado.match(/\b\d{4}\.\d{4}\.\d{4,}\b/);
                     if (match) {
                         numeroOP = match[0];
                     } else {

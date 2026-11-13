@@ -106,9 +106,13 @@ function isPerfilEntradaPdf() {
     return selectPerfil.value === 'consultar-cnd' || selectPerfil.value === 'analise-honorarios-periciais' || selectPerfil.value === 'analise-restituicoes';
 }
 
+function isPerfilEntradaHibrida() {
+    return selectPerfil.value === 'consultar-guia-autenticada';
+}
+
 function descreverArquivoSelecionado(caminho) {
     if (Array.isArray(caminho)) {
-        return caminho.length === 1 ? caminho[0] : `${caminho.length} PDFs selecionados`;
+        return caminho.length === 1 ? caminho[0] : `${caminho.length} arquivo(s) selecionado(s)`;
     }
     return caminho;
 }
@@ -120,9 +124,13 @@ function atualizarTipoArquivo() {
     labelArquivo.innerText = 'Nenhum arquivo selecionado';
     labelArquivo.classList.remove('text-success');
     labelArquivo.classList.add('text-warning');
-    labelTipoArquivo.innerText = isPerfilEntradaPdf()
-        ? 'PDFs de entrada (.pdf)'
-        : 'Planilha de Dados (.xlsx)';
+    if (isPerfilEntradaPdf()) {
+        labelTipoArquivo.innerText = 'PDFs de entrada (.pdf)';
+    } else if (isPerfilEntradaHibrida()) {
+        labelTipoArquivo.innerText = 'Planilha (.xlsx) ou Guias (.pdf)';
+    } else {
+        labelTipoArquivo.innerText = 'Planilha de Dados (.xlsx)';
+    }
 }
 
 // --- EVENTOS ---

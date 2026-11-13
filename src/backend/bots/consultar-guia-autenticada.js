@@ -297,6 +297,74 @@ async function aguardarAutenticacaoECartao(page, config, logTotal) {
     logTotal(`✅  Navegação para a página de consulta confirmada (${urlFormulario}).`);
 }
 
+const { extrairDadosGuiaPdf } = require('../utils/pdf-guia-parser.js');
+
+async function carregarDadosEntrada(entrada, logTotal) {
+    if (Array.isArray(entrada)) {
+        const registros = [];
+        for (const item of entrada) {
+            const ext = path.extname(item).toLowerCase();
+            if (ext === '.pdf') {
+                try {
+                    const dadosPdf = extrairDadosGuiaPdf(item);
+                    if (dadosPdf.idDeposito) {
+                        registros.push({
+                            ID_DEPOSITO: dadosPdf.idDeposito,
+                            Observação: dadosPdf.observacao,
+                            OBSERVACAO: dadosPdf.observacao,
+                            'Proc. Judicial': dadosPdf.processo,
+                            'Arquivo Origem': path.basename(item)
+                        });
+                    } else {
+                        logTotal(`⚠️ [PDF] Não foi possível encontrar ID de depósito em: ${path.basename(item)}`);
+                    }
+                } catch (e) {
+                    logTotal(`❌ [PDF] Erro ao ler guia ${path.basename(item)}: ${e.message}`);
+                }
+            } else if (ext === '.xlsx' || ext === '.xls') {
+                const linhas = await fileUtils.lerExcelInput(item);
+                registros.push(...linhas);
+            }
+        }
+        logTotal(`📋 ${registros.length} registro(s) carregado(s) a partir de ${entrada.length} arquivo(s).`);
+        return registros;
+    }
+
+    if (typeof entrada === 'string') {
+        if (!fs.existsSync(entrada)) {
+            throw new Error(`Arquivo ou diretório não encontrado: ${entrada}`);
+        }
+
+        const stat = fs.statSync(entrada);
+        if (stat.isDirectory()) {
+            const arquivos = fs.readdirSync(entrada).map(f => path.join(entrada, f));
+            return await carregarDadosEntrada(arquivos, logTotal);
+        }
+
+        const ext = path.extname(entrada).toLowerCase();
+        if (ext === '.pdf') {
+            const dadosPdf = extrairDadosGuiaPdf(entrada);
+            if (!dadosPdf.idDeposito) {
+                throw new Error(`Não foi possível extrair o ID de depósito da guia PDF: ${path.basename(entrada)}`);
+            }
+            logTotal(`📄 Guia PDF carregada: ${path.basename(entrada)} (ID: ${dadosPdf.idDeposito} | Obs: ${dadosPdf.observacao || 'N/A'})`);
+            return [{
+                ID_DEPOSITO: dadosPdf.idDeposito,
+                Observação: dadosPdf.observacao,
+                OBSERVACAO: dadosPdf.observacao,
+                'Proc. Judicial': dadosPdf.processo,
+                'Arquivo Origem': path.basename(entrada)
+            }];
+        }
+
+        const dados = await fileUtils.lerExcelInput(entrada);
+        logTotal(`📋 ${dados.length} registro(s) encontrado(s) no Excel.`);
+        return dados;
+    }
+
+    throw new Error('Tipo de entrada inválido para consulta de guia.');
+}
+
 async function executarConsultaGuiaAutenticada(configPerfil, caminhoExcel, diretorioSaida, enviarLog, controle) {
     const logTotal = (msg) => {
         enviarLog(msg);
@@ -308,10 +376,13 @@ async function executarConsultaGuiaAutenticada(configPerfil, caminhoExcel, diret
 
     try {
         const diretorios = fileUtils.prepararDiretorios(diretorioSaida, configPerfil.nome);
-        const dados = await fileUtils.lerExcelInput(caminhoExcel);
+        const dados = await carregarDadosEntrada(caminhoExcel, logTotal);
         const config = obterConfig(configPerfil);
 
-        logTotal(`📋 ${dados.length} registro(s) encontrado(s) no Excel.`);
+        if (dados.length === 0) {
+            logTotal('⚠️ Nenhum registro válido encontrado para consulta.');
+            return { sucesso: true, resumo: { qtdSucesso: 0, qtdErro: 0 } };
+        }
 
         browser = await puppeteer.launch({
             headless: false,

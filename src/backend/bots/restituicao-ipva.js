@@ -112,14 +112,13 @@ async function executarRestituicaoIPVA(configPerfil, caminhoExcel, diretorioSaid
 
                 contexto = await pptUtils.aguardarContextoDoCampo(page, 'txtOrgao'); // Recaptura
 
-                // Resgata a Data de hoje:
-                const dataHoje = new Date();
-                // Se a data vier do ExcelJS como objeto Date:
-                const dataObj = navUtils.tratarData(dataHoje);
+                // Data da Restituição (da planilha ou hoje como fallback)
+                const dataPlanilha = linha[configPerfil.mapeamento_colunas?.DATA];
+                const dataObj = navUtils.tratarData(dataPlanilha) || navUtils.obterDataHoje();
                 if (dataObj) {
-                    await pptUtils.preencherTexto(contexto, 'txtDiaCredito', String(dataObj.getUTCDate()).padStart(2,'0'));
-                    await pptUtils.preencherTexto(contexto, 'txtMesCredito', String(dataObj.getUTCMonth()+1).padStart(2,'0'));
-                    await pptUtils.preencherTexto(contexto, 'txtAnoCredito', dataObj.getUTCFullYear());
+                    await pptUtils.preencherTexto(contexto, 'txtDiaCredito', String(dataObj.getUTCDate()).padStart(2, '0'));
+                    await pptUtils.preencherTexto(contexto, 'txtMesCredito', String(dataObj.getUTCMonth() + 1).padStart(2, '0'));
+                    await pptUtils.preencherTexto(contexto, 'txtAnoCredito', String(dataObj.getUTCFullYear()));
                 }
 
                 // Valor
@@ -290,14 +289,14 @@ async function executarRestituicaoIPVA(configPerfil, caminhoExcel, diretorioSaid
                     await page.waitForSelector('.titulo2', { timeout: 5000 });
                     
                     textoCapturado = await page.$eval('.titulo2', el => el.innerText);
-                    // O texto vem como: "OP extra-orçamentária n 2026.9995.0739 efetuada com sucesso."
+                    // O texto vem como: "OP extra-orçamentária n 2026.9995.0739 efetuada com sucesso." ou com 5 algarismos no final (ex: 2026.9995.10000)
 
                     // LIMPEZA (REGEX)
-                    // Procura por um padrão de números e pontos (ex: 2026.9995.0739)
-                    const match = textoCapturado.match(/[\d]{4}\.[\d]{4}\.[\d]{4}/);
+                    // Procura por um padrão de números e pontos (ex: 2026.9995.0739 ou 2026.9995.10000)
+                    const match = textoCapturado.match(/\b\d{4}\.\d{4}\.\d{4,}\b/);
                     
                     if (match) {
-                        numeroOP = match[0]; // Pega apenas "2026.9995.0739"
+                        numeroOP = match[0]; // Pega apenas a OP formatada (ex: "2026.9995.10000")
                     } else {
                         numeroOP = textoCapturado; // Se não achar o padrão, salva o texto todo por segurança
                     }

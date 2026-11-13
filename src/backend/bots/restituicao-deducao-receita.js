@@ -1,4 +1,4 @@
-﻿const puppeteer = require('puppeteer');
+const puppeteer = require('puppeteer');
 const path = require('path');
 const fileUtils = require('../utils/file-utils');
 const pptUtils = require('../utils/puppeteer-utils');
@@ -123,7 +123,7 @@ async function executarRestituicaoDeducaoReceita(configPerfil, caminhoExcel, dir
                     dataObj = navUtils.tratarData(dataRestituicao);
                 }
                 if (!dataObj) {
-                    dataObj = navUtils.tratarData(new Date());
+                    dataObj = navUtils.obterDataHoje();
                 }
 
                 if (dataObj) {
@@ -209,10 +209,9 @@ async function executarRestituicaoDeducaoReceita(configPerfil, caminhoExcel, dir
 
                 // DDR Débito (se aplicável ao perfil)
                 if (configPerfil.configuracoes_fixas.ddr_debito_texto) {
-                    const cboDdr = await contexto.$('select[name="cboDDRDebito"], select[name="cboNomeFonteDebito"]');
+                    const cboDdr = await contexto.$('select[name="cboDDRDebito"]');
                     if (cboDdr) {
-                        const nomeSelect = await contexto.evaluate(el => el.name, cboDdr);
-                        await pptUtils.selecionarOpcaoPorTexto(contexto, nomeSelect, configPerfil.configuracoes_fixas.ddr_debito_texto);
+                        await pptUtils.selecionarOpcaoPorTexto(contexto, 'cboDDRDebito', configPerfil.configuracoes_fixas.ddr_debito_texto);
                         await navUtils.delay(500);
                     }
                 }
@@ -327,7 +326,7 @@ async function executarRestituicaoDeducaoReceita(configPerfil, caminhoExcel, dir
                     await page.waitForSelector('.titulo2', { timeout: 5000 });
                     textoCapturado = await page.$eval('.titulo2', el => el.innerText);
 
-                    const match = textoCapturado.match(/[\d]{4}\.[\d]{4}\.[\d]{4}/);
+                    const match = textoCapturado.match(/\b\d{4}\.\d{4}\.\d{4,}\b/);
                     if (match) {
                         numeroOP = match[0];
                     } else {

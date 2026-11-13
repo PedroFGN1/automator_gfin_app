@@ -268,4 +268,50 @@ describe('Bot: Restituição - Dedução de Receita com Restituição de Recurso
             ])
         );
     });
+
+    test('Deve capturar número de OP completo com 5 dígitos no sequencial (ex: 2026.9995.10000)', async () => {
+        dialog.showMessageBox.mockResolvedValue({ response: 0 });
+
+        mockPage.$eval.mockImplementation((selector) => {
+            if (selector === '.titulo2') {
+                return Promise.resolve('OP extra-orçamentária n 2026.9995.10000 efetuada com sucesso.');
+            }
+            return Promise.resolve('');
+        });
+
+        fileUtils.lerExcelInput.mockResolvedValue([
+            {
+                'Proc. SEI': '2026/0004/OP5D',
+                'Data da restituição': '30/08/2026',
+                'Valor Atualizado': 2500,
+                'Beneficiário': 'Beneficiario 10k',
+                'CPF | CNPJ (Beneficiário)': '12.345.678/0001-90'
+            }
+        ]);
+
+        fileUtils.exportarRelatorios.mockResolvedValue({
+            qtdSucesso: 1,
+            qtdErro: 0,
+            caminhoArquivo: 'C:/fake/saida/planilhas/relatorio.xlsx'
+        });
+
+        const res = await executarRestituicaoDeducaoReceita(
+            mockConfigPerfil,
+            'C:/fake/planilha.xlsx',
+            'C:/fake/saida',
+            enviarLog,
+            { abortar: false }
+        );
+
+        expect(res.sucesso).toBe(true);
+        expect(fileUtils.exportarRelatorios).toHaveBeenCalledWith(
+            'C:/fake/saida/planilhas',
+            expect.arrayContaining([
+                expect.objectContaining({
+                    status: 'SUCESSO',
+                    numeroOP: '2026.9995.10000'
+                })
+            ])
+        );
+    });
 });

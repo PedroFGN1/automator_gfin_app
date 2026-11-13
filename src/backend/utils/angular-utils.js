@@ -48,86 +48,188 @@ function resolverNomeArquivoPdfUnico(pastaDownload, nomeArquivo) {
     return caminhoCompleto;
 }
 
-// Retiramos o 'async' da assinatura pois ela vai retornar a Promessa diretamente
-function prepararCapturaDeBoletoPeloConsole(page, pastaDownload, opcoes = {}) {
+/**
+ * Captura o PDF do boleto emitido pela Caixa, suportando tanto o novo mecanismo via Blob do botão
+ * "Ver boleto bancário" quanto o mecanismo legado de log no console.
+ *
+ * @param {object} page - Instância da página do Puppeteer.
+ * @param {string} pastaDownload - Diretório onde o PDF será salvo.
+ * @param {object} opcoes - Opções com nomeArquivo, timeoutMs, etc.
+ */
+async function capturarPdfBoletoCaixa(page, pastaDownload, opcoes = {}) {
     const timeoutMs = opcoes.timeoutMs || 30000;
-    console.log("Ativando captura do console ANTES de clicar...");
+    console.log("Iniciando captura de boleto da Caixa (Blob / DOM / Console)...");
 
-    // Garante que a pasta destino existe
-    if (!fs.existsSync(pastaDownload)){
+    if (!fs.existsSync(pastaDownload)) {
         fs.mkdirSync(pastaDownload, { recursive: true });
     }
 
-    // Retorna a promessa imediatamente. Ela ficará pendente até o PDF aparecer.
-    return new Promise((resolve, reject) => {
-        let encerrado = false;
+    const nomeBase = opcoes.nomeArquivo || `boleto_${Date.now()}`;
+    const caminhoCompleto = resolverNomeArquivoPdfUnico(pastaDownload, nomeBase);
 
-        const limpar = () => {
-            clearTimeout(timer);
-            if (typeof page.off === 'function') {
-                page.off('console', capturarConsole);
-            } else if (typeof page.removeListener === 'function') {
-                page.removeListener('console', capturarConsole);
+    // 1. Aguarda a tela final de boleto carregar
+    await page.waitForSelector('button::-p-text(Ver boleto bancário), button.black, button::-p-text(Novo Depósito)', {
+        visible: true,
+        timeout: timeoutMs
+    });
+
+    // 2. Extrai dados textuais gerados na tela (Código de Barras e ID do Depósito)
+    const dadosTela = await page.evaluate(() => {
+        const textoPagina = document.body ? document.body.innerText : '';
+        const folhas = Array.from(document.querySelectorAll('h1, h2, h3, h4, h5, h6, span, p, div, strong, b'))
+            .filter(el => el.children.length === 0)
+            .map(el => ({ texto: (el.innerText || '').trim(), tag: el.tagName }));
+
+        const texto = String(textoPagina || '');
+
+        // 1. Código de barras (linha digitável com ~44-55 dígitos numéricos)
+        let codigoBarra = '';
+        const matchBarra = texto.match(/\b(\d{44,55})\b/);
+        if (matchBarra) {
+            codigoBarra = matchBarra[1];
+        } else {
+            const matchFormatado = texto.match(/(\d{5}[\.\s]?\d{5}[\.\s]?\d{5}[\.\s]?\d{6}[\.\s]?\d{5}[\.\s]?\d{14})/);
+            if (matchFormatado) {
+                codigoBarra = matchFormatado[1].replace(/\D/g, '');
+            } else {
+                const elBarra = folhas.find(el => {
+                    const limpo = el.texto.replace(/\s+/g, '');
+                    return /^\d{44,55}$/.test(limpo);
+                });
+                if (elBarra) codigoBarra = elBarra.texto.replace(/\s+/g, '');
             }
-        };
+        }
 
-        const resolverUmaVez = (resultado) => {
-            if (encerrado) return;
-            encerrado = true;
-            limpar();
-            resolve(resultado);
-        };
+        // 2. ID de Depósito (ancorado explicitamente após o rótulo)
+        let idDeposito = '';
+        const regexAposRotulo = /(?:Este\s+[eé]\s+o\s+)?ID(?:\s+do\s+seu\s+dep[oó]sito)?\s*[:\-]?\s*(\d{15,25})/i;
+        const matchRotulo = texto.match(regexAposRotulo);
+        if (matchRotulo && matchRotulo[1]) {
+            const cand = matchRotulo[1].trim();
+            if (cand !== codigoBarra && (!codigoBarra || !codigoBarra.startsWith(cand))) {
+                idDeposito = cand;
+            }
+        }
 
-        const rejeitarUmaVez = (erro) => {
-            if (encerrado) return;
-            encerrado = true;
-            limpar();
-            reject(erro);
-        };
-
-        const timer = setTimeout(() => {
-            rejeitarUmaVez(new Error("Boleto: PDF não apareceu no console dentro do timeout."));
-        }, timeoutMs);
-
-        const capturarConsole = async (msg) => {
-            const argumentos = msg.args(); 
-            console.log(`[${msg.type().toUpperCase()}] ${msg.text()}`);
-
-            for (const arg of argumentos) {
-                try {
-                    const objetoLogado = await arg.jsonValue();
-
-                    if (objetoLogado && typeof objetoLogado === 'object') {
-                        const base64Data = objetoLogado.boleto || objetoLogado.pdf || encontrarBase64(objetoLogado);
-                        const idDeposito = objetoLogado.id || '';
-                        const codigoBarra = objetoLogado.linhaDigitavel || '';
-                        if (!base64Data || typeof base64Data !== 'string') continue;
-
-                        console.log("PDF localizado no console. Salvando arquivo...");
-                        const nomeArquivo = opcoes.nomeArquivo || objetoLogado.filename || `boleto_${Date.now()}.pdf`;
-                        const caminhoCompleto = resolverNomeArquivoPdfUnico(pastaDownload, nomeArquivo);
-
-                        const pdfBuffer = Buffer.from(base64Data, 'base64');
-                        fs.writeFileSync(caminhoCompleto, pdfBuffer);
-
-                        console.log(`PDF salvo em: ${caminhoCompleto}`);
-                        resolverUmaVez({
-                            sucesso: true,
-                            caminho: caminhoCompleto,
-                            idDeposito,
-                            codigoBarra
-                        });
-                        return;
+        // Fallback A: inspeciona elementos folha com o rótulo
+        if (!idDeposito) {
+            for (const f of folhas) {
+                const m = f.texto.match(regexAposRotulo);
+                if (m && m[1]) {
+                    const c = m[1].trim();
+                    if (c !== codigoBarra && (!codigoBarra || !codigoBarra.startsWith(c))) {
+                        idDeposito = c;
+                        break;
                     }
-                } catch (e) {
-                    // Ignora erros silenciosamente caso arg.jsonValue() falhe em objetos normais do site
-                    console.log('Arg não serializável para JSON, ignorando...', e.message);
                 }
             }
+        }
+
+        // Fallback B: elemento folha cujo texto seja exclusivamente uma sequência de 16 a 20 dígitos
+        if (!idDeposito) {
+            const candFolha = folhas.find(f => {
+                const limpo = f.texto.trim();
+                return /^\d{16,20}$/.test(limpo) && limpo !== codigoBarra && (!codigoBarra || !codigoBarra.startsWith(limpo));
+            });
+            if (candFolha) idDeposito = candFolha.texto.trim();
+        }
+
+        // Sanidade: se ainda assim coincidir com o código de barras, anula
+        if (idDeposito && codigoBarra && (idDeposito === codigoBarra || codigoBarra.startsWith(idDeposito))) {
+            idDeposito = '';
+        }
+
+        return {
+            idDeposito: (idDeposito || '').trim(),
+            codigoBarra: (codigoBarra || '').trim()
+        };
+    });
+
+    console.log(`Dados extraídos da tela: ID=${dadosTela.idDeposito || '(não encontrado)'} | Código de Barras=${dadosTela.codigoBarra || '(não encontrado)'}`);
+
+    // 3. Configura interceptador de Blob / window.open no navegador
+    await page.evaluate(() => {
+        window.__capturedBlobPdfs = [];
+        const origCreateObjectURL = URL.createObjectURL;
+        URL.createObjectURL = function(blob) {
+            const url = origCreateObjectURL.call(URL, blob);
+            if (blob && (blob.type === 'application/pdf' || blob.size > 1000)) {
+                window.__capturedBlobPdfs.push(url);
+            }
+            return url;
         };
 
-        page.on('console', capturarConsole);
+        // Suprime a abertura visual de nova aba pelo window.open e guarda a URL do Blob
+        window.open = function(url) {
+            if (url && typeof url === 'string') {
+                window.__capturedBlobPdfs.push(url);
+            }
+            return null;
+        };
     });
+
+    // 4. Clica no botão "Ver boleto bancário" para disparar a geração do Blob
+    console.log("Clicando em 'Ver boleto bancário' para obter o PDF...");
+    await page.evaluate(() => {
+        const btn = Array.from(document.querySelectorAll('button')).find(b => 
+            b.innerText.includes('Ver boleto') || b.innerText.includes('boleto')
+        );
+        if (btn) btn.click();
+    });
+
+    // 5. Aguarda o Blob ser gerado e extrai o binário via fetch no contexto da página
+    try {
+        await page.waitForFunction(() => {
+            return window.__capturedBlobPdfs && window.__capturedBlobPdfs.length > 0;
+        }, { timeout: 15000 });
+
+        const pdfBase64 = await page.evaluate(async () => {
+            const url = window.__capturedBlobPdfs[window.__capturedBlobPdfs.length - 1];
+            if (!url) return null;
+            const res = await fetch(url);
+            const buf = await res.arrayBuffer();
+            const bytes = new Uint8Array(buf);
+            let binary = '';
+            for (let i = 0; i < bytes.byteLength; i++) {
+                binary += String.fromCharCode(bytes[i]);
+            }
+            return btoa(binary);
+        });
+
+        // Garante o fechamento de qualquer aba secundária eventualmente criada pelo navegador
+        try {
+            const browser = page.browser();
+            const pages = await browser.pages();
+            for (const p of pages) {
+                if (p !== page && !p.isClosed()) {
+                    await p.close().catch(() => {});
+                }
+            }
+            await page.bringToFront().catch(() => {});
+        } catch (e) {}
+
+        if (pdfBase64) {
+            const pdfBuffer = Buffer.from(pdfBase64, 'base64');
+            if (pdfBuffer.slice(0, 4).toString() === '%PDF' || pdfBuffer.length > 500) {
+                fs.writeFileSync(caminhoCompleto, pdfBuffer);
+                console.log(`✅ PDF do boleto capturado via Blob e salvo com sucesso em: ${caminhoCompleto}`);
+                return {
+                    sucesso: true,
+                    caminho: caminhoCompleto,
+                    idDeposito: dadosTela.idDeposito,
+                    codigoBarra: dadosTela.codigoBarra
+                };
+            }
+        }
+    } catch (erroBlob) {
+        console.log(`Aviso: Captura via Blob retornou: ${erroBlob.message}. Tentando métodos alternativos...`);
+    }
+
+    throw new Error("Não foi possível capturar o PDF do boleto gerado.");
+}
+
+function prepararCapturaDeBoletoPeloConsole(page, pastaDownload, opcoes = {}) {
+    return capturarPdfBoletoCaixa(page, pastaDownload, opcoes);
 }
 
 /**
@@ -171,15 +273,47 @@ async function resgatarSelectPorLabel(page, textoLabel, novoId) {
  * Tenta preencher um campo de texto. Se não existir (timeout), assume que é um label preenchido e segue.
  */
 async function preencherOuIgnorar(page, seletor, valor, descricao) {
+    if (!valor) {
+        console.log(`[${descricao}] Valor vazio fornecido. Pulando preenchimento.`);
+        return false;
+    }
+
     try {
-        // Usa um timeout curto para não travar o robô esperando à toa
-        await page.waitForSelector(seletor, { visible: true , timeout: 500 });
+        await page.waitForSelector(seletor, { visible: true, timeout: 2000 });
         console.log(`[${descricao}] Campo editável encontrado. Preenchendo...`);
-        await page.type(seletor, valor);
-        await page.keyboard.press('Tab');
-        return true;
+
+        const preencheu = await page.evaluate((sel, val) => {
+            const input = document.querySelector(sel);
+            if (!input) return false;
+
+            input.focus();
+            input.value = '';
+            input.value = val;
+
+            input.dispatchEvent(new Event('input', { bubbles: true }));
+            input.dispatchEvent(new Event('change', { bubbles: true }));
+            input.blur();
+            input.dispatchEvent(new Event('blur', { bubbles: true }));
+            return true;
+        }, seletor, valor);
+
+        if (preencheu) {
+            return true;
+        }
+
+        // Fallback via digitação do Puppeteer
+        const input = await page.$(seletor);
+        if (input) {
+            await input.click({ clickCount: 3 });
+            await page.keyboard.press('Backspace');
+            await page.type(seletor, valor);
+            await page.keyboard.press('Tab');
+            return true;
+        }
+
+        return false;
     } catch (e) {
-        console.log(`[${descricao}] Campo de input não encontrado. Assumindo que já está preenchido como label.`);
+        console.log(`[${descricao}] Campo de input não encontrado via seletor "${seletor}". Assumindo que já está preenchido como label ou fixo.`);
         return false;
     }
 }
@@ -189,7 +323,7 @@ async function preencherOuIgnorar(page, seletor, valor, descricao) {
  */
 async function selecionarOuIgnorar(page, seletor, valor, descricao, isTexto = false) {
     try {
-        await page.waitForSelector(seletor, { visible: true, timeout: 500 });
+        await page.waitForSelector(seletor, { visible: true, timeout: 2000 });
     } catch (e) {
         console.log(`[${descricao}] Select não encontrado. Assumindo que já está preenchido como label.`);
         return false;
@@ -199,7 +333,7 @@ async function selecionarOuIgnorar(page, seletor, valor, descricao, isTexto = fa
 
     try {
         if (isTexto) {
-            // Usa a sua função customizada que busca por texto
+            // Usa a função customizada que aguarda o carregamento e busca por texto
             await selecionarPorTexto(page, seletor, valor);
         } else {
             // Seleciona pelo value nativo
@@ -214,6 +348,7 @@ async function selecionarOuIgnorar(page, seletor, valor, descricao, isTexto = fa
 }
 
 async function preencherCampoAngular(page, seletor, valor) {
+    await page.waitForSelector(seletor, { visible: true, timeout: 10000 });
     await page.evaluate((sel, val) => {
         const input = document.querySelector(sel);
         if (!input) return; // Proteção extra caso o elemento não exista
@@ -285,7 +420,7 @@ async function clicarCartaoPorTitulo(page, tituloProcurado) {
 
 /**
  * Seleciona uma opção de um <select> com base no texto visível, ignorando espaços e maiúsculas.
- * * @param {object} page - A instância da página do Puppeteer.
+ * @param {object} page - A instância da página do Puppeteer.
  * @param {string} seletorSelect - O seletor CSS que aponta para o campo <select>.
  * @param {string} textoProcurado - O texto visível que você quer escolher (ex: " Goiás ").
  */
@@ -300,9 +435,17 @@ function normalizarTextoParaComparacao(valor) {
 
 async function selecionarPorTexto(page, seletorSelect, textoProcurado) {
     // 1. Aguarda o select aparecer na tela para evitar erros de elemento não encontrado
-    await page.waitForSelector(seletorSelect, { visible: true });
+    await page.waitForSelector(seletorSelect, { visible: true, timeout: 15000 });
 
-    // 2. Injeta um código no navegador para descobrir o 'value' verdadeiro baseado no texto
+    // 2. Aguarda até que as opções do select tenham sido carregadas (para selects dinâmicos/AJAX)
+    await page.waitForFunction((sel) => {
+        const select = document.querySelector(sel);
+        return select && select.options && select.options.length > 1;
+    }, { timeout: 15000 }, seletorSelect).catch(() => {
+        console.log(`[selecionarPorTexto] Timeout aguardando opções no select ${seletorSelect}, prosseguindo com opções atuais.`);
+    });
+
+    // 3. Injeta um código no navegador para descobrir o 'value' verdadeiro baseado no texto
     const valorRealDaOpcao = await page.evaluate((seletor, textoDesejado) => {
         
         // Função interna para padronizar o texto: remove acentos, espaços extras e caixa.
@@ -332,13 +475,19 @@ async function selecionarPorTexto(page, seletorSelect, textoProcurado) {
         
     }, seletorSelect, textoProcurado);
 
-    // 3. Validação: interrompe e avisa se o texto não existir lá dentro
+    // 4. Validação: interrompe e avisa se o texto não existir lá dentro
     if (!valorRealDaOpcao) {
         throw new Error(`A opção "${textoProcurado}" não foi encontrada dentro de "${seletorSelect}".`);
     }
 
-    // 4. Executa a ação final de seleção usando o valor nativo mapeado
-    await page.select(seletorSelect, valorRealDaOpcao);
+    // 5. Executa a ação final de seleção usando o valor nativo mapeado e dispara eventos Angular
+    await page.evaluate((sel, val) => {
+        const select = document.querySelector(sel);
+        if (!select) return;
+        select.value = val;
+        select.dispatchEvent(new Event('change', { bubbles: true }));
+        select.dispatchEvent(new Event('blur', { bubbles: true }));
+    }, seletorSelect, valorRealDaOpcao);
     
     console.log(`Sucesso: Opção de texto "${textoProcurado}" selecionada através do valor interno "${valorRealDaOpcao}".`);
     return true;
@@ -350,27 +499,83 @@ async function selecionarPorTexto(page, seletorSelect, textoProcurado) {
  * @param {AngularHelper} helper - A instância do AngularHelper.
  */
 async function selecionarBoletoEContinuar(page, helper) {
-
     try {
         const btnContinuar = await page.waitForSelector('button.btn-primary::-p-text(Continuar)', { visible: true, timeout: 15000 });
         if (!btnContinuar) throw new Error("Botão 'Continuar' inicial não encontrado.");
+
+        // DIAGNÓSTICO DEFENSIVO: Verifica se o botão Continuar está desabilitado por pendência de validação no formulário
+        const estadoContinuar = await page.evaluate(() => {
+            const btns = Array.from(document.querySelectorAll('button.btn-primary, button'));
+            const btn = btns.find(b => b.textContent.includes('Continuar') && b.offsetParent !== null);
+            if (!btn) return { encontrado: false };
+
+            if (btn.disabled) {
+                // Coleta todos os campos inválidos no formulário Angular para diagnóstico imediato
+                const invalidos = Array.from(document.querySelectorAll('.ng-invalid, .is-invalid')).map(el => {
+                    const tag = el.tagName.toLowerCase();
+                    const nome = el.getAttribute('formcontrolname') || el.getAttribute('name') || el.id || el.getAttribute('label') || tag;
+                    return `${tag}[${nome}]`;
+                });
+                return { encontrado: true, disabled: true, invalidos: Array.from(new Set(invalidos)) };
+            }
+            return { encontrado: true, disabled: false };
+        });
+
+        if (estadoContinuar.disabled) {
+            throw new Error(`Botão 'Continuar' está desabilitado na tela de Informações do Depósito. Verifique o preenchimento dos campos obrigatórios. Campos com validação pendente: ${estadoContinuar.invalidos.join(', ') || 'não identificados'}`);
+        }
+
         await btnContinuar.click();
+        await navUtils.delay(2000); // Pequena pausa para garantir transição para a tela de Confirmação de dados
 
-        //await helper.waitForAngularReady({ debug: true });
-        await navUtils.delay(2000); // Pequena pausa para garantir que a transição ocorreu
+        console.log("Marcando a checkbox de aceitação de termos (#lido-concordado)...");
+        await page.waitForSelector('#lido-concordado', { visible: true, timeout: 15000 });
 
-        console.log("Marcando a checkbox de aceitação de termos...");
-        const checkboxLidoConcordado = await page.waitForSelector('#lido-concordado', { visible: true, timeout: 15000 });
-        if (!checkboxLidoConcordado) throw new Error("Checkbox 'lido-concordado' não encontrada.");
-        await checkboxLidoConcordado.click();
+        // Marca a checkbox se ainda não estiver marcada e emite os eventos do Angular
+        const marcouCheckbox = await page.evaluate(() => {
+            const chk = document.querySelector('#lido-concordado');
+            if (!chk) return false;
+
+            if (!chk.checked) {
+                chk.click();
+            }
+
+            chk.dispatchEvent(new Event('input', { bubbles: true }));
+            chk.dispatchEvent(new Event('change', { bubbles: true }));
+            return chk.checked;
+        });
+
+        if (!marcouCheckbox) {
+            // Fallback via clique do Puppeteer
+            const chkEl = await page.$('#lido-concordado');
+            if (chkEl) await chkEl.click();
+        }
+
+        // Aguarda ativamente o botão Confirmar ficar habilitado
+        console.log("Aguardando habilitação do botão 'Confirmar'...");
+        await page.waitForFunction(() => {
+            const btns = Array.from(document.querySelectorAll('button.btn-primary, button'));
+            const btn = btns.find(b => b.textContent.includes('Confirmar') && b.offsetParent !== null);
+            return btn && !btn.disabled;
+        }, { timeout: 15000 });
 
         console.log("Clicando no botão 'Confirmar'...");
-        const btnConfirmar = await page.waitForSelector('button.btn-primary::-p-text(Confirmar)', { visible: true, timeout: 15000 });
-        if (!btnConfirmar) throw new Error("Botão 'Confirmar' não encontrado.");
-        await btnConfirmar.click();
+        const clicouConfirmar = await page.evaluate(() => {
+            const btns = Array.from(document.querySelectorAll('button.btn-primary, button'));
+            const btn = btns.find(b => b.textContent.includes('Confirmar') && !b.disabled && b.offsetParent !== null);
+            if (btn) {
+                btn.click();
+                return true;
+            }
+            return false;
+        });
 
-        //await helper.waitForAngularReady({ debug: true });
-        await navUtils.delay(2000); // Pequena pausa para garantir que a transição ocorreu
+        if (!clicouConfirmar) {
+            const btnConfirmar = await page.waitForSelector('button.btn-primary::-p-text(Confirmar)', { visible: true, timeout: 5000 });
+            if (btnConfirmar) await btnConfirmar.click();
+        }
+
+        await navUtils.delay(2000); // Aguarda transição para a tela de Forma de Pagamento
 
         console.log("Selecionando a forma de pagamento (BOLETO)...");
         const seletorRadioBoleto = 'input[formcontrolname="formaPagamento"][value="BOLETO"]';
@@ -388,10 +593,9 @@ async function selecionarBoletoEContinuar(page, helper) {
 
         if (!clicou) throw new Error("Opção de pagamento BOLETO não encontrada no DOM.");
 
-        //await helper.waitForAngularReady({ debug: true });
-        //await navUtils.delay(500);
+        await navUtils.delay(1000);
 
-        console.log("Clicando no botão Continuar...");
+        console.log("Clicando no botão Continuar da forma de pagamento...");
         const clicouContinuar = await page.evaluate(() => {
             const btns = Array.from(document.querySelectorAll('button.btn-primary'));
             // Busca de trás pra frente caso tenha múltiplos, garantindo pegar o ativo atual
@@ -410,6 +614,79 @@ async function selecionarBoletoEContinuar(page, helper) {
     }
 }
 
+/**
+ * Extrai Código de Barras e ID de Depósito a partir do texto ou elementos folha da página final de boleto.
+ *
+ * @param {string} textoPagina - Texto consolidado da página.
+ * @param {Array<{texto: string, tag?: string}>} [folhas=[]] - Lista opcional de elementos folhas.
+ * @returns {{ idDeposito: string, codigoBarra: string }}
+ */
+function extrairDadosBoleto(textoPagina = '', folhas = []) {
+    const texto = String(textoPagina || '');
+
+    // 1. Código de barras (linha digitável com ~44-55 dígitos numéricos)
+    let codigoBarra = '';
+    const matchBarra = texto.match(/\b(\d{44,55})\b/);
+    if (matchBarra) {
+        codigoBarra = matchBarra[1];
+    } else {
+        const matchFormatado = texto.match(/(\d{5}[\.\s]?\d{5}[\.\s]?\d{5}[\.\s]?\d{6}[\.\s]?\d{5}[\.\s]?\d{14})/);
+        if (matchFormatado) {
+            codigoBarra = matchFormatado[1].replace(/\D/g, '');
+        } else if (Array.isArray(folhas)) {
+            const elBarra = folhas.find(el => {
+                const limpo = (el.texto || '').replace(/\s+/g, '');
+                return /^\d{44,55}$/.test(limpo);
+            });
+            if (elBarra) codigoBarra = elBarra.texto.replace(/\s+/g, '');
+        }
+    }
+
+    // 2. ID de Depósito (ancorado explicitamente após o rótulo)
+    let idDeposito = '';
+    const regexAposRotulo = /(?:Este\s+[eé]\s+o\s+)?ID(?:\s+do\s+seu\s+dep[oó]sito)?\s*[:\-]?\s*(\d{15,25})/i;
+    const matchRotulo = texto.match(regexAposRotulo);
+    if (matchRotulo && matchRotulo[1]) {
+        const cand = matchRotulo[1].trim();
+        if (cand !== codigoBarra && (!codigoBarra || !codigoBarra.startsWith(cand))) {
+            idDeposito = cand;
+        }
+    }
+
+    // Fallback A: inspeciona elementos folha com o rótulo
+    if (!idDeposito && Array.isArray(folhas)) {
+        for (const f of folhas) {
+            const m = (f.texto || '').match(regexAposRotulo);
+            if (m && m[1]) {
+                const c = m[1].trim();
+                if (c !== codigoBarra && (!codigoBarra || !codigoBarra.startsWith(c))) {
+                    idDeposito = c;
+                    break;
+                }
+            }
+        }
+    }
+
+    // Fallback B: elemento folha cujo texto seja exclusivamente uma sequência de 16 a 20 dígitos
+    if (!idDeposito && Array.isArray(folhas)) {
+        const candFolha = folhas.find(f => {
+            const limpo = (f.texto || '').trim();
+            return /^\d{16,20}$/.test(limpo) && limpo !== codigoBarra && (!codigoBarra || !codigoBarra.startsWith(limpo));
+        });
+        if (candFolha) idDeposito = (candFolha.texto || '').trim();
+    }
+
+    // Sanidade: se ainda assim coincidir com o código de barras, anula
+    if (idDeposito && codigoBarra && (idDeposito === codigoBarra || codigoBarra.startsWith(idDeposito))) {
+        idDeposito = '';
+    }
+
+    return {
+        idDeposito: (idDeposito || '').trim(),
+        codigoBarra: (codigoBarra || '').trim()
+    };
+}
+
 async function finalizarECapturarBoletoPeloConsole(page, pastaDownload, helper) {
     await helper.waitForAngularReady({ debug: true });
     return prepararCapturaDeBoletoPeloConsole(page, pastaDownload, { timeoutMs: 20000 });
@@ -420,6 +697,8 @@ module.exports = {
     sanitizarNomeArquivoPdf,
     resolverNomeArquivoPdfUnico,
     normalizarTextoParaComparacao,
+    extrairDadosBoleto,
+    capturarPdfBoletoCaixa,
     prepararCapturaDeBoletoPeloConsole,
     resgatarSelectPorLabel,
     preencherOuIgnorar,
